@@ -21,7 +21,8 @@ pub struct CodeObject {
     file_name: String,
     name: String,
     first_line: u32,
-    line_table: Box<dyn PycObject>
+    line_table: Box<dyn PycObject>,
+    exception_table: Box<dyn PycObject>,
 
 }
 
@@ -56,8 +57,10 @@ impl CodeObject {
         let first_line = stream.read_int().unwrap();
         let line_table = PycParser::marshal_object(stream);
 
+        let exception_table = PycParser::marshal_object(stream); //TODO: ref
+
         Self {
-            base: BasePycObject::new_from_char('T'),
+            base: BasePycObject::new_from_char('c'),
             num_args,
             num_pos_only_args,
             num_kw_only_args,
@@ -73,7 +76,8 @@ impl CodeObject {
             file_name,
             name,
             first_line,
-            line_table
+            line_table,
+            exception_table
         }
     }
 }
