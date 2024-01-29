@@ -3,6 +3,7 @@ use crate::object::PycObject;
 use crate::object::ObjectType;
 use std::fmt;
 use crate::{InputStream, PycParser};
+use crate::utils::Magic;
 
 pub struct DictObject {
     base: BasePycObject,
@@ -16,14 +17,14 @@ struct DictEntry {
 
 
 impl DictObject {
-    pub fn new(stream: &mut InputStream) -> Self {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> Self {
         let mut entries = vec![];
         loop {
-            let key = PycParser::marshal_object(stream);
+            let key = PycParser::marshal_object(stream, magic);
             if key.object_type() == ObjectType::NULL {
                 break
             }
-            let value = PycParser::marshal_object(stream);
+            let value = PycParser::marshal_object(stream, magic);
             entries.push(DictEntry{key, value});
         }
         Self {

@@ -47,7 +47,7 @@ impl PycObject for crate::object::StringObject {
 
 impl fmt::Debug for crate::object::StringObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "StringObject({:?})", self.data)
+        write!(f, "StringObject({:?})", self.to_string())
     }
 }
 
@@ -79,6 +79,6 @@ impl PycObject for crate::object::UnicodeObject {
 
 impl fmt::Debug for crate::object::UnicodeObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "UnicodeObject({:?})", self.data)
+        write!(f, "UnicodeObject({:?})", self.data)
     }
 }

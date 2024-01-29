@@ -3,6 +3,7 @@ use crate::object::PycObject;
 use crate::object::ObjectType;
 use std::fmt;
 use crate::{InputStream, PycParser};
+use crate::utils::Magic;
 
 pub struct SmallTupleObject {
     base: BasePycObject,
@@ -10,11 +11,11 @@ pub struct SmallTupleObject {
 }
 
 impl SmallTupleObject {
-    pub fn new(stream: &mut InputStream) -> Self {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> Self {
         let length = stream.read().unwrap();
         let mut values = vec![];
         for _ in 0..length {
-            values.push(PycParser::marshal_object(stream));
+            values.push(PycParser::marshal_object(stream, magic));
         }
         Self {
             base: BasePycObject::new_from_char('('),
@@ -38,6 +39,6 @@ impl PycObject for SmallTupleObject {
 
 impl fmt::Debug for SmallTupleObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "SmallTupleObject({:?})", self.values)
+        write!(f, "SmallTupleObject({:?})", self.values)
     }
 }

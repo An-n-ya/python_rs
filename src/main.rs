@@ -1,5 +1,6 @@
 mod object;
 mod utils;
+mod interpreter;
 
 use core::fmt;
 use std::{env::args, fs::File, io::{Cursor, Read, Seek, self}};
@@ -16,33 +17,46 @@ pub(crate) struct InputStream {
 }
 
 impl InputStream {
-    fn new(contents: Vec<u8>) -> Self {
+    pub fn new(contents: Vec<u8>) -> Self {
         Self {
             cursor: Cursor::new(contents)
         }
     }
-    fn new_from_file(mut file: File) -> Self {
+    pub fn new_from_file(mut file: File) -> Self {
         let mut contents = vec![];
         file.read_to_end(&mut contents).unwrap();
         Self::new(contents)
     }
-    fn read(&mut self) -> io::Result<u8> {
+    pub fn read(&mut self) -> io::Result<u8> {
         let mut buf = [0;1];
-        self.cursor.read(&mut buf)?;
+        let n = self.cursor.read(&mut buf)?;
+        if n == 0 {
+        }
         Ok(buf[0])
     }
-    fn read_int(&mut self) -> io::Result<u32> {
+    pub fn read_u16(&mut self) -> io::Result<u16> {
+        let mut buf = [0; 2];
+        self.cursor.read(&mut buf)?;
+        Ok(u16::from_le_bytes(buf))
+    }
+    pub fn read_int(&mut self) -> io::Result<u32> {
         let mut buf = [0; 4];
         self.cursor.read(&mut buf)?;
         Ok(u32::from_le_bytes(buf))
     }
-    fn read_long(&mut self) -> io::Result<u64> {
+    pub fn read_long(&mut self) -> io::Result<u64> {
         let mut buf = [0; 8];
         self.cursor.read(&mut buf)?;
         Ok(u64::from_le_bytes(buf))
     }
-    fn unread(&mut self, n: usize) {
+    pub fn unread(&mut self, n: usize) {
         self.cursor.seek(io::SeekFrom::Current(-(n as i64))).unwrap();
+    }
+    pub fn finish(&self) -> bool {
+        if self.cursor.position() as usize == self.cursor.get_ref().len() {
+            return true;
+        }
+        return false;
     }
 }
 
@@ -100,7 +114,7 @@ impl PycParser {
             timestamp,
             size
         };
-        let code_object = *Self::marshal_object(&mut stream).downcast::<CodeObject>().unwrap();
+        let code_object = *Self::marshal_object(&mut stream, magic).downcast::<CodeObject>().unwrap();
         Self {stream, header, code_object}
     }
 
@@ -126,7 +140,7 @@ impl PycParser {
         NaiveDateTime::from_timestamp_opt(timestamp.into(), 0).unwrap()
     }
 
-    pub fn marshal_object(stream: &mut InputStream) -> Box<dyn PycObject> {
+    pub fn marshal_object(stream: &mut InputStream, magic: Magic) -> Box<dyn PycObject> {
         let object_type: ObjectType = (stream.read().unwrap() as char).into();
         match object_type {
             ObjectType::NULL => Box::new(NullObject::new()),
@@ -141,17 +155,17 @@ impl PycParser {
             ObjectType::SHORT_ASCII
              | ObjectType::SHORT_ASCII_INTERNED => Box::new(StringObject::new_from_short(stream)),
             ObjectType::UNICODE => Box::new(UnicodeObject::new(stream)),
-            ObjectType::DICT => Box::new(DictObject::new(stream)),
-            ObjectType::LIST => Box::new(ListObject::new(stream)),
-            ObjectType::TUPLE => Box::new(TupleObject::new(stream)),
-            ObjectType::SMALL_TUPLE => Box::new(SmallTupleObject::new(stream)),
-            ObjectType::SET => Box::new(SetObject::new(stream)),
+            ObjectType::DICT => Box::new(DictObject::new(stream, magic)),
+            ObjectType::LIST => Box::new(ListObject::new(stream, magic)),
+            ObjectType::TUPLE => Box::new(TupleObject::new(stream, magic)),
+            ObjectType::SMALL_TUPLE => Box::new(SmallTupleObject::new(stream, magic)),
+            ObjectType::SET => Box::new(SetObject::new(stream, magic)),
             ObjectType::REF => {
                 //TODO: ref unimplemented
                 stream.read_int().unwrap(); // index
                 Box::new(NullObject::new())
             },
-            ObjectType::CODE => Box::new(CodeObject::new(stream)),
+            ObjectType::CODE => Box::new(CodeObject::new(stream, magic)),
             _ => unimplemented!()
         }
     }

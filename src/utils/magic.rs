@@ -1,7 +1,7 @@
 use core::fmt;
 use std::cmp::Ordering;
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Copy, Clone)]
 pub enum Magic {
     MAGIC1_0 = 0x00999902,
     MAGIC1_1 = 0x00999903, /* Also covers 1.2 */

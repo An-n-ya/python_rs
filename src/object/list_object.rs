@@ -3,6 +3,7 @@ use crate::object::PycObject;
 use crate::object::ObjectType;
 use std::fmt;
 use crate::{InputStream, PycParser};
+use crate::utils::Magic;
 
 pub struct ListObject {
     base: BasePycObject,
@@ -10,11 +11,11 @@ pub struct ListObject {
 }
 
 impl ListObject {
-    pub fn new(stream: &mut InputStream) -> Self {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> Self {
         let length = stream.read_int().unwrap();
         let mut values = vec![];
         for _ in 0..length {
-            values.push(PycParser::marshal_object(stream));
+            values.push(PycParser::marshal_object(stream, magic));
         }
         Self {
             base: BasePycObject::new_from_char('['),

@@ -23,6 +23,6 @@ impl PycObject for NullObject {
 
 impl fmt::Debug for NullObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "NullObject")
+        write!(f, "NullObject")
     }
 }
