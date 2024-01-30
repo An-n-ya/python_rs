@@ -2,6 +2,7 @@ use crate::object::BasePycObject;
 use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use crate::InputStream;
 
 pub struct IntObject {
@@ -18,6 +19,18 @@ impl IntObject {
     }
 }
 
+impl PartialEq<Self> for IntObject {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl Eq for IntObject {}
+impl Hash for IntObject {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.value.hash(state)
+    }
+}
 impl PyObject for IntObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()

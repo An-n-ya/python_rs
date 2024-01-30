@@ -2,6 +2,8 @@ use crate::object::BasePycObject;
 use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
+use std::hash::{Hash, Hasher};
+use std::os::linux::raw::stat;
 use crate::InputStream;
 
 pub struct StringObject {
@@ -9,7 +11,7 @@ pub struct StringObject {
     data: Vec<u8>
 }
 
-impl crate::object::StringObject {
+impl StringObject {
     pub fn new(stream: &mut InputStream) -> Self {
         let length = stream.read_int().unwrap();
         Self::_new(stream, length)
@@ -39,13 +41,25 @@ impl crate::object::StringObject {
     }
 }
 
-impl PyObject for crate::object::StringObject {
+impl PartialEq<Self> for StringObject {
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
+    }
+}
+
+impl Eq for StringObject {}
+impl Hash for StringObject {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.data.hash(state)
+    }
+}
+impl PyObject for StringObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
 }
 
-impl fmt::Debug for crate::object::StringObject {
+impl fmt::Debug for StringObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, "StringObject({:?})", self.to_string())
     }
@@ -71,13 +85,25 @@ impl crate::object::UnicodeObject {
     }
 }
 
-impl PyObject for crate::object::UnicodeObject {
+impl PartialEq<Self> for UnicodeObject {
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
+    }
+}
+
+impl Eq for UnicodeObject {}
+impl Hash for UnicodeObject {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.data.hash(state)
+    }
+}
+impl PyObject for UnicodeObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
 }
 
-impl fmt::Debug for crate::object::UnicodeObject {
+impl fmt::Debug for UnicodeObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, "UnicodeObject({:?})", self.data)
     }

@@ -10,7 +10,6 @@ mod dict_object;
 mod tuple_object;
 mod list_object;
 mod set_object;
-mod small_tuple_object;
 mod code_object;
 
 pub(crate) use base_object::*;
@@ -25,5 +24,4 @@ pub use dict_object::DictObject;
 pub use tuple_object::TupleObject;
 pub use list_object::ListObject;
 pub use set_object::SetObject;
-pub use small_tuple_object::SmallTupleObject;
 pub use code_object::CodeObject;

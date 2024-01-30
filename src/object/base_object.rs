@@ -1,7 +1,9 @@
 use std::fmt::Debug;
 use downcast_rs::{Downcast, impl_downcast};
+use dyn_eq::DynEq;
+use dyn_hash::DynHash;
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum ObjectType{
     NULL               , // NULL often means error
     NONE               , // None is an object of undefined type
@@ -76,10 +78,12 @@ impl From<char> for ObjectType {
     }
 }
 
-pub trait PyObject: Debug + Downcast {
+pub trait PyObject: Debug + Downcast + DynEq + DynHash {
     fn object_type(&self) -> ObjectType;
 }
 impl_downcast!(PyObject);
+dyn_eq::eq_trait_object!(PyObject);
+dyn_hash::hash_trait_object!(PyObject);
 
 pub(crate) struct BasePycObject {
     _type: ObjectType

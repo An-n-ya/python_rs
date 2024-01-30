@@ -1,12 +1,14 @@
-use crate::object::{BasePycObject, SmallTupleObject, StringObject};
+use crate::object::{BasePycObject, StringObject, TrueObject, TupleObject};
 use crate::object::PyObject as PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
+use std::hash::{Hash, Hasher};
+use std::rc::Rc;
 use crate::{InputStream, PycParser};
 use crate::utils::ByteCode;
 use crate::utils::Magic::{self, *};
 
-type PyObject = Option<Box<dyn PyObjectTrait>>;
+type PyObject = Option<Rc<dyn PyObjectTrait>>;
 pub struct CodeObject {
     base: BasePycObject,
     num_args: Option<u32>,
@@ -78,7 +80,7 @@ impl CodeObject {
         } else if magic >= MAGIC2_3 {
             flags = Some(stream.read_int().unwrap());
         }
-        code = Some(PycParser::marshal_object(stream, magic).downcast::<StringObject>().unwrap().data().clone());
+        code = Some(PycParser::marshal_object(stream, magic).downcast_rc::<StringObject>().unwrap().data().clone());
         constants = Some(PycParser::marshal_object(stream, magic));
         names = Some(PycParser::marshal_object(stream, magic));
 
@@ -165,10 +167,35 @@ impl CodeObject {
         return res;
     }
 
+    pub fn consts(&mut self) -> Vec<Rc<dyn PyObjectTrait>> {
+        // constants should be tuple
+        let tuple = self.constants.take().unwrap();
+        let tuple = tuple.downcast_rc::<TupleObject>().unwrap();
+        tuple.values().clone()
+    }
+    pub fn names(&mut self) -> Vec<Rc<dyn PyObjectTrait>> {
+        // constants should be tuple
+        let tuple = self.names.take().unwrap();
+        let tuple = tuple.downcast_rc::<TupleObject>().unwrap();
+        tuple.values().clone()
+    }
     pub fn code(&self) -> Vec<u8> {
         self.code.clone().unwrap().clone()
     }
 }
+
+impl Hash for CodeObject {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
+        panic!("{}", format!("cannot hash {:?}", self.object_type()))
+    }
+}
+impl PartialEq<Self> for CodeObject {
+    fn eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl Eq for CodeObject{}
 
 impl PyObjectTrait for CodeObject {
     fn object_type(&self) -> ObjectType {
