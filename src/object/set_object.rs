@@ -1,5 +1,5 @@
 use crate::object::BasePycObject;
-use crate::object::PycObject;
+use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
 use crate::{InputStream, PycParser};
@@ -7,7 +7,7 @@ use crate::utils::Magic;
 
 pub struct SetObject {
     base: BasePycObject,
-    values: Vec<Box<dyn PycObject>>
+    values: Vec<Box<dyn PyObject>>
 }
 
 impl SetObject {
@@ -24,7 +24,7 @@ impl SetObject {
     }
 }
 
-impl PycObject for SetObject {
+impl PyObject for SetObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

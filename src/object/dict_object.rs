@@ -1,5 +1,5 @@
 use crate::object::BasePycObject;
-use crate::object::PycObject;
+use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
 use crate::{InputStream, PycParser};
@@ -11,8 +11,8 @@ pub struct DictObject {
 }
 
 struct DictEntry {
-    key: Box<dyn PycObject>,
-    value: Box<dyn PycObject>,
+    key: Box<dyn PyObject>,
+    value: Box<dyn PyObject>,
 }
 
 
@@ -34,7 +34,7 @@ impl DictObject {
     }
 }
 
-impl PycObject for DictObject {
+impl PyObject for DictObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

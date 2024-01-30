@@ -1,5 +1,5 @@
 use crate::object::BasePycObject;
-use crate::object::PycObject;
+use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
 use crate::InputStream;
@@ -18,7 +18,7 @@ impl IntLongObject {
     }
 }
 
-impl PycObject for IntLongObject {
+impl PyObject for IntLongObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

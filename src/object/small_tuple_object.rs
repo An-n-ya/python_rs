@@ -1,5 +1,5 @@
 use crate::object::BasePycObject;
-use crate::object::PycObject;
+use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
 use crate::{InputStream, PycParser};
@@ -7,7 +7,7 @@ use crate::utils::Magic;
 
 pub struct SmallTupleObject {
     base: BasePycObject,
-    values: Vec<Box<dyn PycObject>>
+    values: Vec<Box<dyn PyObject>>
 }
 
 impl SmallTupleObject {
@@ -23,15 +23,15 @@ impl SmallTupleObject {
         }
     }
 
-    pub fn values(&self) -> &Vec<Box<dyn PycObject>> {
+    pub fn values(&self) -> &Vec<Box<dyn PyObject>> {
         &self.values
     }
-    pub fn take_values(self) -> Vec<Box<dyn PycObject>> {
+    pub fn take_values(self) -> Vec<Box<dyn PyObject>> {
         self.values
     }
 }
 
-impl PycObject for SmallTupleObject {
+impl PyObject for SmallTupleObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

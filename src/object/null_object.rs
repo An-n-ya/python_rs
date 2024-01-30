@@ -1,5 +1,5 @@
 use crate::object::BasePycObject;
-use crate::object::PycObject;
+use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
 
@@ -15,7 +15,7 @@ impl NullObject {
     }
 }
 
-impl PycObject for NullObject {
+impl PyObject for NullObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

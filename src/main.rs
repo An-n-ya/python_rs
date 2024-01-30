@@ -6,7 +6,7 @@ use core::fmt;
 use std::{env::args, fs::File, io::{Cursor, Read, Seek, self}};
 
 use chrono::NaiveDateTime;
-use object::PycObject;
+use object::PyObject;
 use object::IntObject;
 use crate::object::{CodeObject, DictObject, FalseObject, IntLongObject, ListObject, NoneObject, NullObject, ObjectType, SetObject, SmallTupleObject, StringObject, TrueObject, TupleObject, UnicodeObject};
 use crate::utils::Magic;
@@ -140,7 +140,7 @@ impl PycParser {
         NaiveDateTime::from_timestamp_opt(timestamp.into(), 0).unwrap()
     }
 
-    pub fn marshal_object(stream: &mut InputStream, magic: Magic) -> Box<dyn PycObject> {
+    pub fn marshal_object(stream: &mut InputStream, magic: Magic) -> Box<dyn PyObject> {
         let object_type: ObjectType = (stream.read().unwrap() as char).into();
         match object_type {
             ObjectType::NULL => Box::new(NullObject::new()),

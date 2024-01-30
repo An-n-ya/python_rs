@@ -76,10 +76,10 @@ impl From<char> for ObjectType {
     }
 }
 
-pub trait PycObject : Debug + Downcast {
+pub trait PyObject: Debug + Downcast {
     fn object_type(&self) -> ObjectType;
 }
-impl_downcast!(PycObject);
+impl_downcast!(PyObject);
 
 pub(crate) struct BasePycObject {
     _type: ObjectType

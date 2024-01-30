@@ -1,5 +1,5 @@
 use crate::object::BasePycObject;
-use crate::object::PycObject;
+use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
 use crate::InputStream;
@@ -39,7 +39,7 @@ impl crate::object::StringObject {
     }
 }
 
-impl PycObject for crate::object::StringObject {
+impl PyObject for crate::object::StringObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
@@ -71,7 +71,7 @@ impl crate::object::UnicodeObject {
     }
 }
 
-impl PycObject for crate::object::UnicodeObject {
+impl PyObject for crate::object::UnicodeObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

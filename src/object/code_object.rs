@@ -1,12 +1,12 @@
 use crate::object::{BasePycObject, SmallTupleObject, StringObject};
-use crate::object::PycObject;
+use crate::object::PyObject as PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
 use crate::{InputStream, PycParser};
 use crate::utils::ByteCode;
 use crate::utils::Magic::{self, *};
 
-type PyObject = Option<Box<dyn PycObject>>;
+type PyObject = Option<Box<dyn PyObjectTrait>>;
 pub struct CodeObject {
     base: BasePycObject,
     num_args: Option<u32>,
@@ -170,7 +170,7 @@ impl CodeObject {
     }
 }
 
-impl PycObject for CodeObject {
+impl PyObjectTrait for CodeObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
