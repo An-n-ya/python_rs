@@ -1,16 +1,19 @@
+use std::rc::Rc;
 use crate::frame::Frame;
 use crate::object::{CodeObject, PyObject as PyObjectTrait};
 use crate::utils::ByteCode::*;
 
-type PyObject = Box<dyn PyObjectTrait>;
-struct Interpreter {
-    cur_frame: Option<Box<Frame>>
+type PyObject = Rc<dyn PyObjectTrait>;
+pub struct Interpreter {
+    cur_frame: Option<Box<Frame>>,
+    return_value: Option<PyObject>
 }
 
 impl Interpreter {
-    pub fn new(code: CodeObject) -> Self {
+    pub fn new(code: Rc<CodeObject>) -> Self {
         Self {
-            cur_frame: Some(Box::new(Frame::new_from_code(code)))
+            cur_frame: Some(Box::new(Frame::new_from_code(code))),
+            return_value: None
         }
     }
 
@@ -23,10 +26,14 @@ impl Interpreter {
                     arg = Some(cur_frame.get_arg());
                 }
                 cur_frame.skip_codes_of(bytecode.cache_num() as usize);
+                if cfg!(test) {
+                    println!("interpret bytecode: {:?}", bytecode);
+                }
 
                 match bytecode {
                     RETURN_VALUE => {
-                        self.next_frame();
+                        self.return_value = Some(cur_frame.pop());
+                        self.next_frame(cur_frame.parent());
                     },
                     LOAD_CONST => {
                         let obj = cur_frame.get_const(arg.unwrap() as usize);
@@ -40,6 +47,9 @@ impl Interpreter {
                         let name = cur_frame.get_name(arg.unwrap() as usize);
                         let tos = cur_frame.pop();
                         cur_frame.set_local(name, tos);
+                    },
+                    RESUME | PRECALL | CACHE => {
+                        // nop
                     }
                     _ => {unimplemented!()}
                 }
@@ -47,9 +57,11 @@ impl Interpreter {
         }
     }
 
-    fn next_frame(&mut self)  {
-        let mut frame = self.cur_frame.take().unwrap();
-        let next_frame = frame.parent();
-        self.cur_frame = next_frame;
+    fn next_frame(&mut self, frame: Option<Box<Frame>>)  {
+        self.cur_frame = frame;
+    }
+
+    pub fn return_value(&self) -> Option<PyObject> {
+        self.return_value.clone()
     }
 }

@@ -10,6 +10,7 @@ use std::rc::Rc;
 use chrono::NaiveDateTime;
 use object::PyObject;
 use object::IntObject;
+use crate::interpreter::Interpreter;
 use crate::object::{CodeObject, DictObject, FalseObject, IntLongObject, ListObject, NoneObject, NullObject, ObjectType, SetObject, StringObject, TrueObject, TupleObject, UnicodeObject};
 use crate::utils::Magic;
 
@@ -101,6 +102,8 @@ fn main() {
     let file = File::open(&args[1]).expect("Failed to open file");
     let stream = InputStream::new_from_file(file);
     let parser = PycParser::new(stream);
+    let mut interpreter = Interpreter::new(parser.code_object.clone());
+    interpreter.run();
     parser.print_info();
 }
 
@@ -186,6 +189,20 @@ mod tests {
         assert_eq!(stream.read().unwrap(), 5);
         stream.unread(1);
         assert_eq!(stream.read().unwrap(), 5);
+    }
+
+    #[test]
+    fn test_one_plus_one() {
+        let file = File::open("./tests/__pycache__/one_plus_one.cpython-311.pyc").expect("Failed to open file");
+        let stream = InputStream::new_from_file(file);
+        let parser = PycParser::new(stream);
+        let mut interpreter = Interpreter::new(parser.code_object);
+        interpreter.run();
+        let return_value = interpreter.return_value();
+        assert!(return_value.is_some());
+        let return_value = return_value.unwrap();
+        let return_value = return_value.downcast_rc::<NoneObject>().expect("return value should be NoneObject");
+        assert_eq!(return_value, Rc::new(NoneObject::new()));
     }
 }
 

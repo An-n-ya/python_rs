@@ -17,7 +17,7 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub fn new_from_code(mut code: CodeObject) -> Self {
+    pub fn new_from_code(mut code: Rc<CodeObject>) -> Self {
         Self {
             stack: vec![],
             code: InputStream::new(code.code()),

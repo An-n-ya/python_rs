@@ -167,16 +167,14 @@ impl CodeObject {
         return res;
     }
 
-    pub fn consts(&mut self) -> Vec<Rc<dyn PyObjectTrait>> {
+    pub fn consts(&self) -> Vec<Rc<dyn PyObjectTrait>> {
         // constants should be tuple
-        let tuple = self.constants.take().unwrap();
-        let tuple = tuple.downcast_rc::<TupleObject>().unwrap();
+        let tuple = self.constants.clone().unwrap().downcast_rc::<TupleObject>().unwrap();
         tuple.values().clone()
     }
-    pub fn names(&mut self) -> Vec<Rc<dyn PyObjectTrait>> {
+    pub fn names(&self) -> Vec<Rc<dyn PyObjectTrait>> {
         // constants should be tuple
-        let tuple = self.names.take().unwrap();
-        let tuple = tuple.downcast_rc::<TupleObject>().unwrap();
+        let tuple = self.names.clone().unwrap().downcast_rc::<TupleObject>().unwrap();
         tuple.values().clone()
     }
     pub fn code(&self) -> Vec<u8> {
