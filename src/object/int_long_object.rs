@@ -4,6 +4,7 @@ use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::os::linux::raw::stat;
+use std::rc::Rc;
 use crate::InputStream;
 
 pub struct IntLongObject {
@@ -12,11 +13,11 @@ pub struct IntLongObject {
 }
 
 impl IntLongObject {
-    pub fn new(stream: &mut InputStream) -> Self {
-        Self {
+    pub fn new(stream: &mut InputStream) -> Rc<Self> {
+        Rc::new(Self {
             base: BasePycObject::new_from_char('I'),
             value: stream.read_long().unwrap()
-        }
+        })
     }
 }
 

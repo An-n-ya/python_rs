@@ -19,7 +19,7 @@ struct DictEntry {
 
 
 impl DictObject {
-    pub fn new(stream: &mut InputStream, magic: Magic) -> Self {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
         let mut entries = vec![];
         loop {
             let key = PycParser::marshal_object(stream, magic);
@@ -29,10 +29,10 @@ impl DictObject {
             let value = PycParser::marshal_object(stream, magic);
             entries.push(DictEntry{key, value});
         }
-        Self {
+        Rc::new(Self {
             base: BasePycObject::new_from_char('{'),
             entries
-        }
+        })
     }
 }
 

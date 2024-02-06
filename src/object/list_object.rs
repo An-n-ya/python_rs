@@ -13,16 +13,16 @@ pub struct ListObject {
 }
 
 impl ListObject {
-    pub fn new(stream: &mut InputStream, magic: Magic) -> Self {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
         let length = stream.read_int().unwrap();
         let mut values = vec![];
         for _ in 0..length {
             values.push(PycParser::marshal_object(stream, magic));
         }
-        Self {
+        Rc::new(Self {
             base: BasePycObject::new_from_char('['),
             values
-        }
+        })
     }
 }
 

@@ -13,14 +13,14 @@ pub struct TupleObject {
 }
 
 impl TupleObject {
-    pub fn new(stream: &mut InputStream, magic: Magic) -> Self {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
         let length = stream.read_int().unwrap();
-        Self::_new(stream, magic, length)
+        Rc::new(Self::_new(stream, magic, length))
     }
 
-    pub fn new_from_short(stream: &mut InputStream, magic: Magic) -> Self {
+    pub fn new_from_short(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
         let length = stream.read().unwrap();
-        Self::_new(stream, magic, length as u32)
+        Rc::new(Self::_new(stream, magic, length as u32))
     }
 
     fn _new(stream: &mut InputStream, magic: Magic, length: u32) -> Self {

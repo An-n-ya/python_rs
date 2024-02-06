@@ -148,29 +148,29 @@ impl PycParser {
     pub fn marshal_object(stream: &mut InputStream, magic: Magic) -> Rc<dyn PyObject> {
         let object_type: ObjectType = (stream.read().unwrap() as char).into();
         match object_type {
-            ObjectType::NULL => Rc::new(NullObject::new()),
-            ObjectType::NONE => Rc::new(NoneObject::new()),
-            ObjectType::FALSE => Rc::new(FalseObject::new()),
-            ObjectType::TRUE => Rc::new(TrueObject::new()),
-            ObjectType::INT => Rc::new(IntObject::new(stream)),
-            ObjectType::INT64 => Rc::new(IntLongObject::new(stream)),
+            ObjectType::NULL => NullObject::new(),
+            ObjectType::NONE => NoneObject::new(),
+            ObjectType::FALSE => FalseObject::new(),
+            ObjectType::TRUE => TrueObject::new(),
+            ObjectType::INT => IntObject::new(stream),
+            ObjectType::INT64 => IntLongObject::new(stream),
             ObjectType::STRING
              | ObjectType::ASCII
-             | ObjectType::ASCII_INTERNED => Rc::new(StringObject::new(stream)),
+             | ObjectType::ASCII_INTERNED => StringObject::new(stream),
             ObjectType::SHORT_ASCII
-             | ObjectType::SHORT_ASCII_INTERNED => Rc::new(StringObject::new_from_short(stream)),
-            ObjectType::UNICODE => Rc::new(UnicodeObject::new(stream)),
-            ObjectType::DICT => Rc::new(DictObject::new(stream, magic)),
-            ObjectType::LIST => Rc::new(ListObject::new(stream, magic)),
-            ObjectType::TUPLE => Rc::new(TupleObject::new(stream, magic)),
-            ObjectType::SMALL_TUPLE => Rc::new(TupleObject::new_from_short(stream, magic)),
-            ObjectType::SET => Rc::new(SetObject::new(stream, magic)),
+             | ObjectType::SHORT_ASCII_INTERNED => StringObject::new_from_short(stream),
+            ObjectType::UNICODE => StringObject::new_from_unicode(stream),
+            ObjectType::DICT => DictObject::new(stream, magic),
+            ObjectType::LIST => ListObject::new(stream, magic),
+            ObjectType::TUPLE => TupleObject::new(stream, magic),
+            ObjectType::SMALL_TUPLE => TupleObject::new_from_short(stream, magic),
+            ObjectType::SET => SetObject::new(stream, magic),
             ObjectType::REF => {
                 //TODO: ref unimplemented
                 stream.read_int().unwrap(); // index
-                Rc::new(NullObject::new())
+                NullObject::new()
             },
-            ObjectType::CODE => Rc::new(CodeObject::new(stream, magic)),
+            ObjectType::CODE => CodeObject::new(stream, magic),
             _ => unimplemented!()
         }
     }

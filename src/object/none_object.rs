@@ -3,16 +3,17 @@ use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::rc::Rc;
 
 pub struct NoneObject {
     base: BasePycObject,
 }
 
 impl NoneObject {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Rc<Self> {
+        Rc::new(Self {
             base: BasePycObject::new_from_char('N'),
-        }
+        })
     }
 }
 

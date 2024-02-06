@@ -3,6 +3,7 @@ use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::rc::Rc;
 use crate::InputStream;
 
 pub struct IntObject {
@@ -11,11 +12,11 @@ pub struct IntObject {
 }
 
 impl IntObject {
-    pub fn new(stream: &mut InputStream) -> Self {
-        Self {
+    pub fn new(stream: &mut InputStream) -> Rc<Self> {
+        Rc::new(Self {
             base: BasePycObject::new_from_char('i'),
             value: stream.read_int().unwrap()
-        }
+        })
     }
 }
 

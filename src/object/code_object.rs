@@ -34,7 +34,7 @@ pub struct CodeObject {
 }
 
 impl CodeObject {
-    pub fn new(stream: &mut InputStream, magic: Magic) -> Self {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
         let mut num_args = None;
         let mut num_pos_only_args = None;
         let mut num_kw_only_args = None;
@@ -116,7 +116,7 @@ impl CodeObject {
             exception_table = Some(PycParser::marshal_object(stream, magic));
         }
 
-        Self {
+        Rc::new(Self {
             base: BasePycObject::new_from_char('c'),
             num_args,
             num_pos_only_args,
@@ -137,7 +137,7 @@ impl CodeObject {
             first_line,
             line_table,
             exception_table
-        }
+        })
     }
 
     pub fn dump_code(&self) -> String {
