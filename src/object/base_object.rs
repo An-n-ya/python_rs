@@ -4,6 +4,7 @@ use dyn_eq::DynEq;
 use dyn_hash::DynHash;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[allow(unused, non_camel_case_types)]
 pub enum ObjectType{
     NULL               , // NULL often means error
     NONE               , // None is an object of undefined type
@@ -35,6 +36,9 @@ pub enum ObjectType{
     SMALL_TUPLE        ,
     SHORT_ASCII        ,
     SHORT_ASCII_INTERNED ,
+
+    // runtime object
+    CALLABLE
 }
 
 const FLAG_REF: u8 = 0x80;
@@ -64,6 +68,7 @@ impl From<char> for ObjectType {
             '[' => ObjectType::LIST,
             '{' => ObjectType::DICT,
             'c' => ObjectType::CODE,
+            'C' => ObjectType::CALLABLE,
             'u' => ObjectType::UNICODE,
             '?' => ObjectType::UNKNOWN,
             '<' => ObjectType::SET,

@@ -1,4 +1,4 @@
-use crate::object::{BasePycObject, StringObject, TrueObject, TupleObject};
+use crate::object::{BasePycObject, StringObject, TupleObject};
 use crate::object::PyObject as PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
@@ -9,6 +9,7 @@ use crate::utils::ByteCode;
 use crate::utils::Magic::{self, *};
 
 type PyObject = Option<Rc<dyn PyObjectTrait>>;
+#[allow(unused)]
 pub struct CodeObject {
     base: BasePycObject,
     num_args: Option<u32>,
@@ -34,6 +35,7 @@ pub struct CodeObject {
 }
 
 impl CodeObject {
+    #[allow(unused_assignments)]
     pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
         let mut num_args = None;
         let mut num_pos_only_args = None;
@@ -179,6 +181,10 @@ impl CodeObject {
     }
     pub fn code(&self) -> Vec<u8> {
         self.code.clone().unwrap().clone()
+    }
+
+    pub fn num_args(&self) -> u32 {
+        self.num_args.unwrap()
     }
 }
 

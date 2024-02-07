@@ -11,18 +11,22 @@ use chrono::NaiveDateTime;
 use object::PyObject;
 use object::IntObject;
 use crate::interpreter::Interpreter;
-use crate::object::{CodeObject, DictObject, FalseObject, IntLongObject, ListObject, NoneObject, NullObject, ObjectType, SetObject, StringObject, TrueObject, TupleObject, UnicodeObject};
+use crate::object::{CodeObject, DictObject, FalseObject, IntLongObject, ListObject, NoneObject, NullObject, ObjectType, SetObject, StringObject, TrueObject, TupleObject};
 use crate::utils::Magic;
 
 
 pub(crate) struct InputStream {
-    cursor: Cursor<Vec<u8>>
+    cursor: Cursor<Vec<u8>>,
+    refs: Vec<Rc<dyn PyObject>>,
+    depths: u8
 }
 
 impl InputStream {
     pub fn new(contents: Vec<u8>) -> Self {
         Self {
-            cursor: Cursor::new(contents)
+            cursor: Cursor::new(contents),
+            depths: 0,
+            refs: Vec::default()
         }
     }
     pub fn new_from_file(mut file: File) -> Self {
@@ -61,10 +65,28 @@ impl InputStream {
         }
         return false;
     }
+
+    pub fn inc_depth(&mut self){
+        self.depths += 1;
+    }
+    pub fn dec_depth(&mut self){
+        self.depths -= 1;
+    }
+    #[allow(dead_code)]
+    pub fn depth(&self) -> u8 {
+        self.depths
+    }
+
+    pub fn push_ref(&mut self, r: Rc<dyn PyObject>) {
+        self.refs.push(r);
+    }
+
+    pub fn get_ref(&self, index: usize) -> Rc<dyn PyObject> {
+        self.refs.get(index).unwrap().clone()
+    }
 }
 
 struct PycParser {
-    stream: InputStream,
     header: PycHeader,
     code_object: Rc<CodeObject>
 }
@@ -120,7 +142,7 @@ impl PycParser {
             size
         };
         let code_object = Self::marshal_object(&mut stream, magic).downcast_rc::<CodeObject>().unwrap();
-        Self {stream, header, code_object}
+        Self {header, code_object}
     }
 
     pub fn print_info(&self) {
@@ -147,32 +169,75 @@ impl PycParser {
 
     pub fn marshal_object(stream: &mut InputStream, magic: Magic) -> Rc<dyn PyObject> {
         let object_type: ObjectType = (stream.read().unwrap() as char).into();
-        match object_type {
+        stream.inc_depth();
+
+        let ret: Rc<dyn PyObject> = match object_type {
             ObjectType::NULL => NullObject::new(),
             ObjectType::NONE => NoneObject::new(),
             ObjectType::FALSE => FalseObject::new(),
             ObjectType::TRUE => TrueObject::new(),
-            ObjectType::INT => IntObject::new(stream),
-            ObjectType::INT64 => IntLongObject::new(stream),
+            ObjectType::INT => {
+                let ret = IntObject::new(stream);
+                stream.push_ref(ret.clone());
+                ret
+            },
+            ObjectType::INT64 => {
+                let ret = IntLongObject::new(stream);
+                stream.push_ref(ret.clone());
+                ret
+            },
             ObjectType::STRING
              | ObjectType::ASCII
-             | ObjectType::ASCII_INTERNED => StringObject::new(stream),
+             | ObjectType::ASCII_INTERNED => {
+                let ret = StringObject::new(stream);
+                stream.push_ref(ret.clone());
+                ret
+            },
             ObjectType::SHORT_ASCII
-             | ObjectType::SHORT_ASCII_INTERNED => StringObject::new_from_short(stream),
-            ObjectType::UNICODE => StringObject::new_from_unicode(stream),
-            ObjectType::DICT => DictObject::new(stream, magic),
-            ObjectType::LIST => ListObject::new(stream, magic),
-            ObjectType::TUPLE => TupleObject::new(stream, magic),
-            ObjectType::SMALL_TUPLE => TupleObject::new_from_short(stream, magic),
-            ObjectType::SET => SetObject::new(stream, magic),
+             | ObjectType::SHORT_ASCII_INTERNED => {
+                let ret = StringObject::new_from_short(stream);
+                stream.push_ref(ret.clone());
+                ret
+            },
+            ObjectType::UNICODE => {
+                let ret = StringObject::new_from_unicode(stream);
+                stream.push_ref(ret.clone());
+                ret
+            },
+            ObjectType::DICT => {
+                let ret = DictObject::new(stream, magic);
+                stream.push_ref(ret.clone());
+                ret
+            },
+            ObjectType::LIST => {
+                let ret = ListObject::new(stream, magic);
+                stream.push_ref(ret.clone());
+                ret
+            },
+            ObjectType::TUPLE => {
+                let ret = TupleObject::new(stream, magic);
+                stream.push_ref(ret.clone());
+                ret
+            },
+            ObjectType::SMALL_TUPLE => {
+                let ret = TupleObject::new_from_short(stream, magic);
+                stream.push_ref(ret.clone());
+                ret
+            },
+            ObjectType::SET => {
+                let ret = SetObject::new(stream, magic);
+                stream.push_ref(ret.clone());
+                ret
+            },
             ObjectType::REF => {
-                //TODO: ref unimplemented
-                stream.read_int().unwrap(); // index
-                NullObject::new()
+                let index = stream.read_int().unwrap(); // index
+                stream.get_ref(index as usize)
             },
             ObjectType::CODE => CodeObject::new(stream, magic),
             _ => unimplemented!()
-        }
+        };
+        stream.dec_depth();
+        ret
     }
 }
 
@@ -202,7 +267,21 @@ mod tests {
         assert!(return_value.is_some());
         let return_value = return_value.unwrap();
         let return_value = return_value.downcast_rc::<NoneObject>().expect("return value should be NoneObject");
-        assert_eq!(return_value, Rc::new(NoneObject::new()));
+        assert_eq!(return_value, NoneObject::new());
+    }
+
+    #[test]
+    fn test_function() {
+        let file = File::open("./tests/__pycache__/function.cpython-311.pyc").expect("Failed to open file");
+        let stream = InputStream::new_from_file(file);
+        let parser = PycParser::new(stream);
+        let mut interpreter = Interpreter::new(parser.code_object);
+        interpreter.run();
+        let return_value = interpreter.return_value();
+        assert!(return_value.is_some());
+        let return_value = return_value.unwrap();
+        let return_value = return_value.downcast_rc::<NoneObject>().expect("return value should be NoneObject");
+        assert_eq!(return_value, NoneObject::new());
     }
 }
 

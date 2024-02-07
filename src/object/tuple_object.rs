@@ -34,6 +34,7 @@ impl TupleObject {
         }
     }
 
+    #[allow(dead_code)]
     pub fn take_values(self) -> Vec<Rc<dyn PyObject>> {
         self.values
     }
@@ -61,7 +62,7 @@ impl PartialEq<Self> for TupleObject {
 impl Eq for TupleObject {}
 
 impl Hash for TupleObject {
-    fn hash<H: Hasher>(&self, state: &mut H) {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
         // TODO: tuple should be hashable
         unimplemented!()
     }

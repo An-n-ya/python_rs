@@ -11,6 +11,7 @@ mod tuple_object;
 mod list_object;
 mod set_object;
 mod code_object;
+mod callable_object;
 
 pub(crate) use base_object::*;
 pub use int_object::IntObject;
@@ -25,3 +26,4 @@ pub use tuple_object::TupleObject;
 pub use list_object::ListObject;
 pub use set_object::SetObject;
 pub use code_object::CodeObject;
+pub use callable_object::CallableObject;

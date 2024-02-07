@@ -3,13 +3,12 @@ use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::os::linux::raw::stat;
 use std::rc::Rc;
 use crate::InputStream;
 
 pub struct StringObject {
     base: BasePycObject,
-    data: String
+    data: Vec<u8>
 }
 
 impl StringObject {
@@ -30,7 +29,7 @@ impl StringObject {
     pub fn new_from_str(s: &str) -> Rc<Self> {
         Rc::new(Self {
             base: BasePycObject::new_from_char('s'),
-            data: s.to_string(),
+            data: s.to_string().as_bytes().to_vec(),
         })
     }
 
@@ -41,16 +40,16 @@ impl StringObject {
         }
         Self {
             base: BasePycObject::new_from_char('s'),
-            data: String::from_utf8(data).expect("invalid utf8 string"),
+            data,
         }
     }
 
-    pub fn string(&self) -> &String {
-        &self.data
+    pub fn string(&self) -> String {
+        String::from_utf8(self.data.clone()).expect("invalid utf8 string")
     }
 
     pub fn data(&self) -> &Vec<u8> {
-        &self.data.as_bytes().to_vec()
+        &self.data
     }
 
 }
@@ -75,7 +74,7 @@ impl PyObject for StringObject {
 
 impl fmt::Debug for StringObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "StringObject({:?})", self.data)
+        write!(f, "StringObject({:?})", self.string())
     }
 }
 

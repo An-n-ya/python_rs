@@ -1,4 +1,4 @@
-use crate::object::{BasePycObject, TrueObject};
+use crate::object::BasePycObject;
 use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
@@ -18,7 +18,7 @@ impl NullObject {
 }
 
 impl PartialEq<Self> for NullObject {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(&self, _other: &Self) -> bool {
         return true;
     }
 }

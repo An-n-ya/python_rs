@@ -10,7 +10,7 @@ pub struct TrueObject {
 }
 
 impl TrueObject {
-    pub fn new() -> Rc::<Self> {
+    pub fn new() -> Rc<Self> {
         Rc::new(Self {
             base: BasePycObject::new_from_char('T'),
         })
@@ -26,7 +26,7 @@ impl PartialEq<Self> for TrueObject {
 impl Eq for TrueObject {}
 
 impl Hash for TrueObject {
-    fn hash<H: Hasher>(&self, state: &mut H) {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
         panic!("{}", format!("cannot hash {:?}", self.object_type()))
     }
 }
