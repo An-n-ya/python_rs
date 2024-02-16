@@ -76,8 +76,13 @@ impl PyObject for CallableObject {
     }
 }
 
+impl fmt::Display for CallableObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "")
+    }
+}
 impl fmt::Debug for CallableObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "CallableObject")
+        write!(f, "CallableObject")
     }
 }

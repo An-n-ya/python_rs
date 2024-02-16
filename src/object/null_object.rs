@@ -35,6 +35,12 @@ impl PyObject for NullObject {
     }
 }
 
+impl fmt::Display for NullObject {
+    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        // We shouldn't print NullObject
+        panic!("cannot print NullObject")
+    }
+}
 impl fmt::Debug for NullObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, "NullObject")

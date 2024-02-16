@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use downcast_rs::{Downcast, impl_downcast};
 use dyn_eq::DynEq;
 use dyn_hash::DynHash;
@@ -83,7 +83,7 @@ impl From<char> for ObjectType {
     }
 }
 
-pub trait PyObject: Debug + Downcast + DynEq + DynHash {
+pub trait PyObject: Debug + Display + Downcast + DynEq + DynHash {
     fn object_type(&self) -> ObjectType;
 }
 impl_downcast!(PyObject);

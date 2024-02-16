@@ -38,8 +38,13 @@ impl PyObject for IntObject {
     }
 }
 
+impl fmt::Display for IntObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "{}", self.value)
+    }
+}
 impl fmt::Debug for IntObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "IntObject({})", self.value)
+        write!(f, "IntObject({})", self.value)
     }
 }

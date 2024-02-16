@@ -1,4 +1,4 @@
-use crate::object::BasePycObject;
+use crate::object::{BasePycObject, CallableObject};
 use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;
@@ -63,5 +63,17 @@ impl fmt::Debug for DictObject {
             writeln!(f, "   {:?}: {:?}", entry.key, entry.value).unwrap();
         }
         writeln!(f, "}})")
+    }
+}
+impl fmt::Display for DictObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "{{").unwrap();
+        for (i, entry) in self.entries.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ").unwrap();
+            }
+            write!(f, "{}: {}", entry.key, entry.value).unwrap();
+        }
+        write!(f, "}}")
     }
 }

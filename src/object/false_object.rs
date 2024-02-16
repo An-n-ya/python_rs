@@ -37,6 +37,11 @@ impl PyObject for FalseObject {
 
 impl fmt::Debug for FalseObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "FalseObject")
+        write!(f, "FalseObject")
+    }
+}
+impl fmt::Display for FalseObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "False")
     }
 }

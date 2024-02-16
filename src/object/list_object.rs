@@ -54,8 +54,20 @@ impl PyObject for ListObject {
     }
 }
 
+impl fmt::Display for ListObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "[").unwrap();
+        for (i, entry) in self.values.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ").unwrap();
+            }
+            write!(f, "{}", entry).unwrap();
+        }
+        write!(f, "]")
+    }
+}
 impl fmt::Debug for ListObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "ListObject({:?})", self.values)
+        write!(f, "ListObject({:?})", self.values)
     }
 }

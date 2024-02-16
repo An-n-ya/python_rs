@@ -37,8 +37,13 @@ impl PyObject for TrueObject {
     }
 }
 
+impl fmt::Display for TrueObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "True")
+    }
+}
 impl fmt::Debug for TrueObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "TrueObject")
+        write!(f, "TrueObject")
     }
 }

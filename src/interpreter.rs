@@ -13,10 +13,10 @@ pub struct Interpreter {
 }
 
 fn native_print(args: Vec<PyObject>) -> PyObject {
-    for _arg in args {
+    for arg in args {
         // FIXME: print problem in function.py
-        // print!("{:?}", arg);
-        print!("hello");
+        print!("{}", arg);
+        // print!("hello");
     }
     println!();
     NoneObject::new()

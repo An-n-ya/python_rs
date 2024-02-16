@@ -37,6 +37,11 @@ impl PyObject for NoneObject {
 
 impl fmt::Debug for NoneObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "NoneObject")
+        write!(f, "NoneObject")
+    }
+}
+impl fmt::Display for NoneObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "None")
     }
 }

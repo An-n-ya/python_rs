@@ -72,6 +72,12 @@ impl PyObject for StringObject {
     }
 }
 
+impl fmt::Display for StringObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "{}", self.string())
+    }
+}
+
 impl fmt::Debug for StringObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, "StringObject({:?})", self.string())

@@ -40,6 +40,11 @@ impl PyObject for IntLongObject {
 
 impl fmt::Debug for IntLongObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "IntLongObject({})", self.value)
+        write!(f, "IntLongObject({})", self.value)
+    }
+}
+impl fmt::Display for IntLongObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "{}", self.value)
     }
 }

@@ -1,4 +1,4 @@
-use crate::object::{BasePycObject, StringObject, TupleObject};
+use crate::object::{BasePycObject, CallableObject, StringObject, TupleObject};
 use crate::object::PyObject as PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
@@ -221,5 +221,10 @@ impl fmt::Debug for CodeObject {
         writeln!(f, "   file_name={:?}", self.file_name).unwrap();
         writeln!(f, "   name={:?}", self.name).unwrap();
         writeln!(f, ")")
+    }
+}
+impl fmt::Display for CodeObject {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "")
     }
 }
