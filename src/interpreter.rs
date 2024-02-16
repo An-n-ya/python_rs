@@ -148,7 +148,7 @@ impl Interpreter {
                     RESUME | PRECALL | CACHE | KW_NAMES => {
                         // nop
                     }
-                    _ => {unimplemented!()}
+                    _ => {unimplemented!("command {:?} unimplemented", bytecode)}
                 }
             }
             if next_frame.is_some() {

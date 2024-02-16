@@ -5,6 +5,7 @@ mod frame;
 
 use core::fmt;
 use std::{env::args, fs::File, io::{Cursor, Read, Seek, self}};
+use std::process::{Command, exit};
 use std::rc::Rc;
 
 use chrono::NaiveDateTime;
@@ -126,9 +127,23 @@ fn main() {
         std::process::exit(0);
     }
 
-    let file = File::open(&args.file).expect("Failed to open file");
-    let stream = InputStream::new_from_file(file);
-    let parser = PycParser::new(stream);
+    Command::new("compileall2")
+        .arg(&args.file)
+        .output()
+        .expect(&format!("failed to compile {}", &args.file));
+
+    const PYC_SUFFIX: &str = ".cpython-311.pyc";
+    let file_path = std::path::Path::new(&args.file);
+    let file_name = file_path.file_name().unwrap().to_str().unwrap();
+    let len = file_name.len();
+    let file_name = &file_name[0..len - 3];
+    let parent_path = file_path.parent().unwrap();
+    let pyc_path = parent_path.to_str().unwrap().to_string() + "/__pycache__/" + file_name + PYC_SUFFIX;
+
+
+
+    let file = File::open(pyc_path).expect("Failed to open file");
+    let parser = PycParser::new(file);
     let mut interpreter = Interpreter::new(parser.code_object.clone());
     interpreter.run();
     if args.info {
@@ -137,7 +152,8 @@ fn main() {
 }
 
 impl PycParser {
-    pub fn new(mut stream: InputStream) -> Self {
+    pub fn new(file: File) -> Self {
+        let mut stream = InputStream::new_from_file(file);
         let magic = Self::get_magic(&mut stream);
         let flags = Self::get_flags(&mut stream);
         let timestamp = Self::get_timestamp(&mut stream);
