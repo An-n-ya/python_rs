@@ -8,6 +8,7 @@ use std::{env::args, fs::File, io::{Cursor, Read, Seek, self}};
 use std::rc::Rc;
 
 use chrono::NaiveDateTime;
+use clap::Parser;
 use object::PyObject;
 use object::IntObject;
 use crate::interpreter::Interpreter;
@@ -110,23 +111,29 @@ impl fmt::Display for PycHeader {
     }
 }
 
+#[derive(Parser)]
+struct Args {
+    #[arg(long, short, action)]
+    info: bool,
+    #[arg(long, short)]
+    file: String
+}
+
 fn main() {
-    let args: Vec<String> = args().collect();
-    if args.len() < 2 {
-        println!("please provide a file");
-        std::process::exit(0);
-    }
-    if !std::path::Path::new(&args[1]).exists() {
-        println!("cannot find file {}", args[1]);
+    let args = Args::parse();
+    if !std::path::Path::new(&args.file).exists() {
+        println!("cannot find file {}", args.file);
         std::process::exit(0);
     }
 
-    let file = File::open(&args[1]).expect("Failed to open file");
+    let file = File::open(&args.file).expect("Failed to open file");
     let stream = InputStream::new_from_file(file);
     let parser = PycParser::new(stream);
     let mut interpreter = Interpreter::new(parser.code_object.clone());
     interpreter.run();
-    parser.print_info();
+    if args.info {
+        parser.print_info();
+    }
 }
 
 impl PycParser {
