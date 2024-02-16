@@ -7,3 +7,5 @@ for i in range(255):
 print(hex(dis.HAVE_ARGUMENT))
 print(dis._inline_cache_entries)
 
+
+print(dis.cmp_op)

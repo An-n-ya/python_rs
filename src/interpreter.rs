@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 use crate::frame::Frame as FrameRaw;
-use crate::object::{CallableObject, CodeObject, FalseObject, NoneObject, NullObject, PyObject as PyObjectTrait, StringObject, TrueObject};
+use crate::object::{CallableObject, CodeObject, FalseObject, IntObject, NoneObject, NullObject, PyObject as PyObjectTrait, StringObject, TrueObject};
 use crate::utils::ByteCode::*;
+use crate::utils::CmpOP;
+
 
 type PyObject = Rc<dyn PyObjectTrait>;
 type Frame = Option<Box<FrameRaw>>;
@@ -23,6 +25,7 @@ fn native_print(args: Vec<PyObject>) -> PyObject {
 }
 
 impl Interpreter {
+    const CMP_OP: [CmpOP; 6] = [CmpOP::LT, CmpOP::LE, CmpOP::EQ, CmpOP::NEQ, CmpOP::GT, CmpOP::GE];
     pub fn new(code: Rc<CodeObject>) -> Self {
         let builtins = Self::setup_builtins();
 
@@ -52,7 +55,7 @@ impl Interpreter {
                 if bytecode.have_arg() {
                     arg = Some(cur_frame.get_arg());
                 }
-                cur_frame.skip_codes_of(bytecode.cache_num() as usize);
+                // cur_frame.skip_codes_of(bytecode.cache_num() as usize);
                 if cfg!(test) {
                     println!("interpret bytecode: {:?}", bytecode);
                 }
@@ -145,6 +148,83 @@ impl Interpreter {
                         let tos = cur_frame.pop();
                         cur_frame.set_local(name, tos);
                     },
+                    COMPARE_OP => {
+                        let arg = arg.unwrap();
+                        let lhs = cur_frame.pop();
+                        let rhs = cur_frame.pop();
+                        // we suppose that lhs and rhs should be number
+                        let lhs = lhs.clone()
+                            .downcast_rc::<IntObject>()
+                            .expect(&format!("{:?} cannot be compared", lhs.object_type()));
+                        let rhs = rhs.clone()
+                            .downcast_rc::<IntObject>()
+                            .expect(&format!("{:?} cannot be compared", rhs.object_type()));
+                        let op = &Self::CMP_OP[arg as usize];
+                        match op {
+                            CmpOP::GT =>cur_frame.push(Self::new_bool_object(lhs > rhs)),
+                            CmpOP::GE =>cur_frame.push(Self::new_bool_object(lhs >= rhs)),
+                            CmpOP::LT =>cur_frame.push(Self::new_bool_object(lhs < rhs)),
+                            CmpOP::LE =>cur_frame.push(Self::new_bool_object(lhs <= rhs)),
+                            CmpOP::EQ =>cur_frame.push(Self::new_bool_object(lhs == rhs)),
+                            CmpOP::NEQ =>cur_frame.push(Self::new_bool_object(lhs != rhs)),
+                        }
+                    },
+                    POP_JUMP_BACKWARD_IF_NOT_NONE => {
+                        let arg = arg.unwrap();
+                        let tos = cur_frame.pop();
+                        if tos.downcast_rc::<NoneObject>().is_err() {
+                            cur_frame.backward_code(arg as usize);
+                        }
+                    },
+                    POP_JUMP_FORWARD_IF_NOT_NONE => {
+                        let arg = arg.unwrap();
+                        let tos = cur_frame.pop();
+                        if tos.downcast_rc::<NoneObject>().is_err() {
+                            cur_frame.forward_code(arg as usize);
+                        }
+                    },
+                    POP_JUMP_FORWARD_IF_NONE => {
+                        let arg = arg.unwrap();
+                        let tos = cur_frame.pop();
+                        if tos.downcast_rc::<NoneObject>().is_ok() {
+                            cur_frame.forward_code(arg as usize);
+                        }
+                    },
+                    POP_JUMP_BACKWARD_IF_NONE => {
+                        let arg = arg.unwrap();
+                        let tos = cur_frame.pop();
+                        if tos.downcast_rc::<NoneObject>().is_ok() {
+                            cur_frame.backward_code(arg as usize);
+                        }
+                    },
+                    POP_JUMP_BACKWARD_IF_TRUE =>{
+                        let arg = arg.unwrap();
+                        let tos = cur_frame.pop();
+                        if tos.downcast_rc::<TrueObject>().is_ok() {
+                            cur_frame.backward_code(arg as usize);
+                        }
+                    },
+                    POP_JUMP_FORWARD_IF_TRUE =>{
+                        let arg = arg.unwrap();
+                        let tos = cur_frame.pop();
+                        if tos.downcast_rc::<TrueObject>().is_ok() {
+                            cur_frame.forward_code(arg as usize);
+                        }
+                    },
+                    POP_JUMP_BACKWARD_IF_FALSE =>{
+                        let arg = arg.unwrap();
+                        let tos = cur_frame.pop();
+                        if tos.downcast_rc::<FalseObject>().is_ok() {
+                            cur_frame.backward_code(arg as usize);
+                        }
+                    },
+                    POP_JUMP_FORWARD_IF_FALSE =>{
+                        let arg = arg.unwrap();
+                        let tos = cur_frame.pop();
+                        if tos.downcast_rc::<FalseObject>().is_ok() {
+                            cur_frame.forward_code(arg as usize);
+                        }
+                    },
                     RESUME | PRECALL | CACHE | KW_NAMES => {
                         // nop
                     }
@@ -163,6 +243,13 @@ impl Interpreter {
     }
 
 
+    pub fn new_bool_object(val: bool) -> PyObject {
+        if val {
+            TrueObject::new()
+        } else {
+            FalseObject::new()
+        }
+    }
 
     pub fn return_value(&self) -> Option<PyObject> {
         self.return_value.clone()

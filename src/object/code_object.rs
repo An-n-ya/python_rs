@@ -118,7 +118,7 @@ impl CodeObject {
             exception_table = Some(PycParser::marshal_object(stream, magic));
         }
 
-        Rc::new(Self {
+        let mut code = Self {
             base: BasePycObject::new_from_char('c'),
             num_args,
             num_pos_only_args,
@@ -139,32 +139,44 @@ impl CodeObject {
             first_line,
             line_table,
             exception_table
-        })
+        };
+        code.strip_cache();
+        Rc::new(code)
     }
 
     pub fn dump_code(&self) -> String {
         let mut res = "".to_string();
         let mut cursor = InputStream::new(self.code());
+        let mut pc = 0u32;
         while !cursor.finish() {
+            let mut inc = 0u32;
+            let mut cur_line = "".to_string();
             let op_code = cursor.read().unwrap();
+            inc += 1;
+
             let bytecode: ByteCode = op_code.into();
             if bytecode == ByteCode::CACHE {
                 // FIXME: why we have extra CACHE?
+                pc += inc;
                 continue;
             }
-            res.push_str(&*format!("{:?}", bytecode));
+            cur_line.push_str(&*format!("{:?}", bytecode));
             if bytecode.have_arg() {
                 let arg = cursor.read().unwrap();
-                res.push_str(&*format!("  arg={}", arg));
+                inc += 1;
+                cur_line.push_str(&*format!("  arg={}", arg));
             }
-            if bytecode.cache_num() > 0 {
-                res.push_str(&*format!("  cache_num={}", bytecode.cache_num()));
-                for _ in 0..bytecode.cache_num() {
-                    // FIXME: why cache is 16 bit wide?
-                    cursor.read_u16().unwrap();
-                }
-            }
-            res.push('\n');
+            // if bytecode.cache_num() > 0 {
+            //     cur_line.push_str(&*format!("  cache_num={}", bytecode.cache_num()));
+            //     for _ in 0..bytecode.cache_num() {
+            //         cursor.read_u16().unwrap();
+            //         inc += 2;
+            //     }
+            // }
+            cur_line.push('\n');
+            cur_line = format!("{pc}: ") + &cur_line;
+            res.push_str(&cur_line);
+            pc += inc;
         }
         return res;
     }
@@ -181,6 +193,21 @@ impl CodeObject {
     }
     pub fn code(&self) -> Vec<u8> {
         self.code.clone().unwrap().clone()
+    }
+
+    pub fn strip_cache(&mut self) {
+        let mut new_code: Vec<u8> = vec![];
+        let mut cursor = InputStream::new(self.code());
+        while !cursor.finish() {
+            let bytecode: ByteCode = cursor.read().unwrap().into();
+            if bytecode != ByteCode::CACHE {
+                new_code.push(bytecode.into());
+            }
+            if bytecode.have_arg() {
+                new_code.push(cursor.read().unwrap());
+            }
+        }
+        self.code = Some(new_code);
     }
 
     pub fn num_args(&self) -> u32 {

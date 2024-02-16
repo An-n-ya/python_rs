@@ -74,6 +74,13 @@ impl Frame {
         }
     }
 
+    pub fn backward_code(&mut self, n: usize) {
+        self.code.unread(n);
+    }
+    pub fn forward_code(&mut self, n: usize) {
+        self.code.forward(n);
+    }
+
     pub fn parent(&mut self) -> Option<Box<Frame>> {
         self.parent.take()
     }
