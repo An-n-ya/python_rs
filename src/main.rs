@@ -4,8 +4,8 @@ mod interpreter;
 mod frame;
 
 use core::fmt;
-use std::{env::args, fs::File, io::{Cursor, Read, Seek, self}};
-use std::process::{Command, exit};
+use std::{fs::File, io::{Cursor, Read, Seek, self}};
+use std::process::{Command};
 use std::rc::Rc;
 
 use chrono::NaiveDateTime;
@@ -48,21 +48,37 @@ impl InputStream {
         self.cursor.read(&mut buf)?;
         Ok(u16::from_le_bytes(buf))
     }
-    pub fn read_int(&mut self) -> io::Result<u32> {
+    pub fn read_i32(&mut self) -> io::Result<i32> {
+        let mut buf = [0; 4];
+        self.cursor.read(&mut buf)?;
+        Ok(i32::from_le_bytes(buf))
+    }
+    pub fn read_u32(&mut self) -> io::Result<u32> {
         let mut buf = [0; 4];
         self.cursor.read(&mut buf)?;
         Ok(u32::from_le_bytes(buf))
     }
+    pub fn read_i64(&mut self) -> io::Result<i64> {
+        let mut buf = [0; 8];
+        self.cursor.read(&mut buf)?;
+        Ok(i64::from_le_bytes(buf))
+    }
+    #[allow(dead_code)]
     pub fn read_long(&mut self) -> io::Result<u64> {
         let mut buf = [0; 8];
         self.cursor.read(&mut buf)?;
         Ok(u64::from_le_bytes(buf))
     }
+    #[allow(dead_code)]
     pub fn unread(&mut self, n: usize) {
         self.cursor.seek(io::SeekFrom::Current(-(n as i64))).unwrap();
     }
+    pub fn jump_offset(&mut self, n: i64) {
+        self.cursor.seek(io::SeekFrom::Current(n)).unwrap();
+    }
+    #[allow(dead_code)]
     pub fn forward(&mut self, n: usize) {
-        self.cursor.seek(io::SeekFrom::Current((n as i64))).unwrap();
+        self.cursor.seek(io::SeekFrom::Current(n as i64)).unwrap();
     }
     pub fn finish(&self) -> bool {
         if self.cursor.position() as usize == self.cursor.get_ref().len() {
@@ -121,7 +137,6 @@ struct Args {
     info: bool,
     #[arg(long, short, action)]
     no_run: bool,
-    #[arg(long, short)]
     file: String,
 
 }
@@ -182,19 +197,19 @@ impl PycParser {
     }
 
     fn get_magic(stream: &mut InputStream) -> Magic {
-        let magic = stream.read_int().unwrap();
+        let magic = stream.read_u32().unwrap();
         magic.into()
         // FIXME: different magic have different header
     }
 
     fn get_flags(stream: &mut InputStream) -> u32 {
-        stream.read_int().unwrap()
+        stream.read_u32().unwrap()
     }
     fn get_size(stream: &mut InputStream) -> u32 {
-        stream.read_int().unwrap()
+        stream.read_u32().unwrap()
     }
     fn get_timestamp(stream: &mut InputStream) -> NaiveDateTime {
-        let timestamp = stream.read_int().unwrap();
+        let timestamp = stream.read_u32().unwrap();
         NaiveDateTime::from_timestamp_opt(timestamp.into(), 0).unwrap()
     }
 
@@ -261,7 +276,7 @@ impl PycParser {
                 ret
             },
             ObjectType::REF => {
-                let index = stream.read_int().unwrap(); // index
+                let index = stream.read_u32().unwrap(); // index
                 stream.get_ref(index as usize)
             },
             ObjectType::CODE => CodeObject::new(stream, magic),
@@ -281,7 +296,7 @@ mod tests {
     fn test_input_stream() {
         let arr: Vec<u8> = vec![1,2,3,4,5];
         let mut stream = InputStream::new(arr);
-        assert_eq!(stream.read_int().unwrap(), 0x04030201);
+        assert_eq!(stream.read_u32().unwrap(), 0x04030201);
         assert_eq!(stream.read().unwrap(), 5);
         stream.unread(1);
         assert_eq!(stream.read().unwrap(), 5);

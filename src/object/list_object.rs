@@ -14,7 +14,7 @@ pub struct ListObject {
 
 impl ListObject {
     pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
-        let length = stream.read_int().unwrap();
+        let length = stream.read_u32().unwrap();
         let mut values = vec![];
         for _ in 0..length {
             values.push(PycParser::marshal_object(stream, magic));

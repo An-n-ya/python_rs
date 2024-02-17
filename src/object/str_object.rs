@@ -13,7 +13,7 @@ pub struct StringObject {
 
 impl StringObject {
     pub fn new(stream: &mut InputStream) -> Rc<Self> {
-        let length = stream.read_int().unwrap();
+        let length = stream.read_u32().unwrap();
         Rc::new(Self::_new(stream, length))
     }
     pub fn new_from_short(stream: &mut InputStream) -> Rc<Self> {
@@ -22,7 +22,7 @@ impl StringObject {
     }
 
     pub fn new_from_unicode(stream: &mut InputStream) -> Rc<Self> {
-        let length = stream.read_int().unwrap();
+        let length = stream.read_u32().unwrap();
         Rc::new(Self::_new(stream, length))
     }
 

@@ -9,15 +9,26 @@ use crate::InputStream;
 
 pub struct IntObject {
     base: BasePycObject,
-    value: u32
+    value: i32
 }
 
 impl IntObject {
     pub fn new(stream: &mut InputStream) -> Rc<Self> {
         Rc::new(Self {
             base: BasePycObject::new_from_char('i'),
-            value: stream.read_int().unwrap()
+            value: stream.read_i32().unwrap()
         })
+    }
+
+    pub fn new_from_i32(value: i32) -> Rc<Self> {
+        Rc::new(Self {
+            base: BasePycObject::new_from_char('i'),
+            value
+        })
+    }
+
+    pub fn value(&self) -> i32 {
+        self.value
     }
 }
 

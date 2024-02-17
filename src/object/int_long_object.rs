@@ -8,14 +8,14 @@ use crate::InputStream;
 
 pub struct IntLongObject {
     base: BasePycObject,
-    value: u64
+    value: i64
 }
 
 impl IntLongObject {
     pub fn new(stream: &mut InputStream) -> Rc<Self> {
         Rc::new(Self {
             base: BasePycObject::new_from_char('I'),
-            value: stream.read_long().unwrap()
+            value: stream.read_i64().unwrap()
         })
     }
 }

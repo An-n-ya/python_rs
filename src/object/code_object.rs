@@ -1,4 +1,4 @@
-use crate::object::{BasePycObject, CallableObject, StringObject, TupleObject};
+use crate::object::{BasePycObject, StringObject, TupleObject};
 use crate::object::PyObject as PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
@@ -59,28 +59,28 @@ impl CodeObject {
         if magic >= MAGIC1_3 && magic < MAGIC2_3 {
             num_args = Some(stream.read_u16().unwrap() as u32);
         } else if magic >= MAGIC2_3 {
-            num_args = Some(stream.read_int().unwrap());
+            num_args = Some(stream.read_u32().unwrap());
         }
         if magic >= MAGIC3_8 {
-            num_pos_only_args = Some(stream.read_int().unwrap());
+            num_pos_only_args = Some(stream.read_u32().unwrap());
         }
         if magic >= MAGIC3_0 {
-            num_kw_only_args = Some(stream.read_int().unwrap());
+            num_kw_only_args = Some(stream.read_u32().unwrap());
         }
         if magic >= MAGIC1_3 && magic < MAGIC2_3 {
             num_locals = Some(stream.read_u16().unwrap() as u32);
         } else if magic >= MAGIC2_3 && magic < MAGIC3_11 {
-            num_locals = Some(stream.read_int().unwrap());
+            num_locals = Some(stream.read_u32().unwrap());
         }
         if magic >= MAGIC1_5 && magic < MAGIC2_3 {
             num_stack = Some(stream.read_u16().unwrap() as u32);
         } else if magic >= MAGIC2_3 {
-            num_stack = Some(stream.read_int().unwrap());
+            num_stack = Some(stream.read_u32().unwrap());
         }
         if magic >= MAGIC1_5 && magic < MAGIC2_3 {
             flags = Some(stream.read_u16().unwrap() as u32);
         } else if magic >= MAGIC2_3 {
-            flags = Some(stream.read_int().unwrap());
+            flags = Some(stream.read_u32().unwrap());
         }
         code = Some(PycParser::marshal_object(stream, magic).downcast_rc::<StringObject>().unwrap().data().clone());
         constants = Some(PycParser::marshal_object(stream, magic));
@@ -108,7 +108,7 @@ impl CodeObject {
         if magic >= MAGIC1_5 && magic < MAGIC2_3 {
             first_line = Some(stream.read_u16().unwrap() as u32);
         } else if magic >= MAGIC2_3 {
-            first_line = Some(stream.read_int().unwrap());
+            first_line = Some(stream.read_u32().unwrap());
         }
         if magic >= MAGIC1_5 {
             line_table = Some(PycParser::marshal_object(stream, magic));
@@ -118,7 +118,7 @@ impl CodeObject {
             exception_table = Some(PycParser::marshal_object(stream, magic));
         }
 
-        let mut code = Self {
+        let code = Self {
             base: BasePycObject::new_from_char('c'),
             num_args,
             num_pos_only_args,
@@ -140,7 +140,7 @@ impl CodeObject {
             line_table,
             exception_table
         };
-        code.strip_cache();
+        // code.strip_cache();
         Rc::new(code)
     }
 
@@ -166,13 +166,13 @@ impl CodeObject {
                 inc += 1;
                 cur_line.push_str(&*format!("  arg={}", arg));
             }
-            // if bytecode.cache_num() > 0 {
-            //     cur_line.push_str(&*format!("  cache_num={}", bytecode.cache_num()));
-            //     for _ in 0..bytecode.cache_num() {
-            //         cursor.read_u16().unwrap();
-            //         inc += 2;
-            //     }
-            // }
+            if bytecode.cache_num() > 0 {
+                cur_line.push_str(&*format!("  cache_num={}", bytecode.cache_num()));
+                for _ in 0..bytecode.cache_num() {
+                    cursor.read_u16().unwrap();
+                    inc += 2;
+                }
+            }
             cur_line.push('\n');
             cur_line = format!("{pc}: ") + &cur_line;
             res.push_str(&cur_line);
@@ -195,6 +195,7 @@ impl CodeObject {
         self.code.clone().unwrap().clone()
     }
 
+    #[allow(dead_code)]
     pub fn strip_cache(&mut self) {
         let mut new_code: Vec<u8> = vec![];
         let mut cursor = InputStream::new(self.code());

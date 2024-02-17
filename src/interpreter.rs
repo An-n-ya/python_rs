@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::frame::Frame as FrameRaw;
 use crate::object::{CallableObject, CodeObject, FalseObject, IntObject, NoneObject, NullObject, PyObject as PyObjectTrait, StringObject, TrueObject};
 use crate::utils::ByteCode::*;
-use crate::utils::CmpOP;
+use crate::utils::{BinaryOp, ByteCode, CmpOP};
 
 
 type PyObject = Rc<dyn PyObjectTrait>;
@@ -55,10 +55,8 @@ impl Interpreter {
                 if bytecode.have_arg() {
                     arg = Some(cur_frame.get_arg());
                 }
-                // cur_frame.skip_codes_of(bytecode.cache_num() as usize);
-                if cfg!(test) {
-                    println!("interpret bytecode: {:?}", bytecode);
-                }
+                cur_frame.skip_codes_of(bytecode.cache_num() as usize);
+                // println!("interpret bytecode: {:?}", bytecode);
 
                 match bytecode {
                     CALL => {
@@ -150,8 +148,8 @@ impl Interpreter {
                     },
                     COMPARE_OP => {
                         let arg = arg.unwrap();
-                        let lhs = cur_frame.pop();
                         let rhs = cur_frame.pop();
+                        let lhs = cur_frame.pop();
                         // we suppose that lhs and rhs should be number
                         let lhs = lhs.clone()
                             .downcast_rc::<IntObject>()
@@ -169,61 +167,43 @@ impl Interpreter {
                             CmpOP::NEQ =>cur_frame.push(Self::new_bool_object(lhs != rhs)),
                         }
                     },
-                    POP_JUMP_BACKWARD_IF_NOT_NONE => {
+                    POP_JUMP_BACKWARD_IF_NOT_NONE | POP_JUMP_FORWARD_IF_NOT_NONE => {
                         let arg = arg.unwrap();
                         let tos = cur_frame.pop();
                         if tos.downcast_rc::<NoneObject>().is_err() {
-                            cur_frame.backward_code(arg as usize);
+                            cur_frame.jump_offset(Self::get_jump_offset(bytecode, arg));
                         }
                     },
-                    POP_JUMP_FORWARD_IF_NOT_NONE => {
-                        let arg = arg.unwrap();
-                        let tos = cur_frame.pop();
-                        if tos.downcast_rc::<NoneObject>().is_err() {
-                            cur_frame.forward_code(arg as usize);
-                        }
-                    },
-                    POP_JUMP_FORWARD_IF_NONE => {
+                    POP_JUMP_FORWARD_IF_NONE | POP_JUMP_BACKWARD_IF_NONE => {
                         let arg = arg.unwrap();
                         let tos = cur_frame.pop();
                         if tos.downcast_rc::<NoneObject>().is_ok() {
-                            cur_frame.forward_code(arg as usize);
+                            cur_frame.jump_offset(Self::get_jump_offset(bytecode, arg));
                         }
                     },
-                    POP_JUMP_BACKWARD_IF_NONE => {
-                        let arg = arg.unwrap();
-                        let tos = cur_frame.pop();
-                        if tos.downcast_rc::<NoneObject>().is_ok() {
-                            cur_frame.backward_code(arg as usize);
-                        }
-                    },
-                    POP_JUMP_BACKWARD_IF_TRUE =>{
-                        let arg = arg.unwrap();
+                    POP_JUMP_BACKWARD_IF_TRUE | POP_JUMP_FORWARD_IF_TRUE =>{
+                        let arg = arg.unwrap() ;
                         let tos = cur_frame.pop();
                         if tos.downcast_rc::<TrueObject>().is_ok() {
-                            cur_frame.backward_code(arg as usize);
+                            cur_frame.jump_offset(Self::get_jump_offset(bytecode, arg));
                         }
                     },
-                    POP_JUMP_FORWARD_IF_TRUE =>{
-                        let arg = arg.unwrap();
-                        let tos = cur_frame.pop();
-                        if tos.downcast_rc::<TrueObject>().is_ok() {
-                            cur_frame.forward_code(arg as usize);
-                        }
-                    },
-                    POP_JUMP_BACKWARD_IF_FALSE =>{
+                    POP_JUMP_BACKWARD_IF_FALSE | POP_JUMP_FORWARD_IF_FALSE =>{
                         let arg = arg.unwrap();
                         let tos = cur_frame.pop();
                         if tos.downcast_rc::<FalseObject>().is_ok() {
-                            cur_frame.backward_code(arg as usize);
+                            cur_frame.jump_offset(Self::get_jump_offset(bytecode, arg));
                         }
                     },
-                    POP_JUMP_FORWARD_IF_FALSE =>{
+                    JUMP_BACKWARD | JUMP_FORWARD => {
                         let arg = arg.unwrap();
+                        cur_frame.jump_offset(Self::get_jump_offset(bytecode, arg));
+                    }
+                    BINARY_OP => {
+                        let op:BinaryOp = arg.unwrap().into();
                         let tos = cur_frame.pop();
-                        if tos.downcast_rc::<FalseObject>().is_ok() {
-                            cur_frame.forward_code(arg as usize);
-                        }
+                        let tos1 = cur_frame.pop();
+                        cur_frame.push(op.handle(tos1, tos));
                     },
                     RESUME | PRECALL | CACHE | KW_NAMES => {
                         // nop
@@ -251,6 +231,26 @@ impl Interpreter {
         }
     }
 
+    const BACKWARD_JUMP: [ByteCode; 6] = [
+        POP_JUMP_BACKWARD_IF_NONE,
+        POP_JUMP_BACKWARD_IF_FALSE,
+        POP_JUMP_BACKWARD_IF_TRUE,
+        JUMP_BACKWARD,
+        POP_JUMP_BACKWARD_IF_NOT_NONE,
+        JUMP_BACKWARD_NO_INTERRUPT
+    ];
+    fn get_jump_offset(bytecode: ByteCode, arg: u8) -> i64 {
+        let caches = bytecode.cache_num() as i64;
+        let mut arg = arg as i64;
+
+        if Self::BACKWARD_JUMP.contains(&bytecode) {
+            arg = -arg;
+        }
+        // refer to Cpython(Lib/dis.py:_get_jump_target)
+        2 * caches + arg * 2
+    }
+
+    #[allow(dead_code)]
     pub fn return_value(&self) -> Option<PyObject> {
         self.return_value.clone()
     }

@@ -1,4 +1,4 @@
-use crate::object::{BasePycObject, CallableObject};
+use crate::object::{BasePycObject};
 use crate::object::PyObject;
 use crate::object::ObjectType;
 use std::fmt;

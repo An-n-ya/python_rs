@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display, Formatter, write};
+use std::fmt::{Debug, Formatter};
 
 pub enum CmpOP{
     LT,

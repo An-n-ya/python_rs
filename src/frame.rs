@@ -68,15 +68,21 @@ impl Frame {
         self.code.read().unwrap()
     }
 
+    #[allow(dead_code)]
     pub fn skip_codes_of(&mut self, n: usize) {
         for _ in 0..n {
             self.code.read().unwrap();
         }
     }
 
+    #[allow(dead_code)]
     pub fn backward_code(&mut self, n: usize) {
         self.code.unread(n);
     }
+    pub fn jump_offset(&mut self, n: i64) {
+        self.code.jump_offset(n);
+    }
+    #[allow(dead_code)]
     pub fn forward_code(&mut self, n: usize) {
         self.code.forward(n);
     }

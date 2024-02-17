@@ -14,7 +14,7 @@ pub struct TupleObject {
 
 impl TupleObject {
     pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
-        let length = stream.read_int().unwrap();
+        let length = stream.read_u32().unwrap();
         Rc::new(Self::_new(stream, magic, length))
     }
 
