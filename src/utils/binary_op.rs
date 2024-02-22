@@ -1,8 +1,7 @@
 use std::fmt::{Debug, Formatter};
-use std::rc::Rc;
-use crate::object::{IntObject, PyObject as PyObjectTrait};
+use crate::object::{IntObject};
 
-type PyObject = Rc<dyn PyObjectTrait>;
+use crate::utils::PyObject;
 pub enum BinaryOp{
     Add(bool),
     And(bool),
@@ -88,6 +87,7 @@ impl From<u8> for BinaryOp {
 }
 
 impl BinaryOp {
+    #[allow(unreachable_code)]
     pub fn handle(&self, lhs: PyObject, rhs: PyObject) -> PyObject {
         match self {
             BinaryOp::Add(_) => {
@@ -101,18 +101,56 @@ impl BinaryOp {
                 }
                 panic!("cannot perform add on {lhs:?} and {rhs:?}");
             },
-            BinaryOp::And(_) => unimplemented!(),
-            BinaryOp::FloorDivide(_) => unimplemented!(),
-            BinaryOp::ShiftLeft(_) => unimplemented!(),
-            BinaryOp::MatrixMultiply(_) => unimplemented!(),
-            BinaryOp::Multiply(_) => unimplemented!(),
-            BinaryOp::Modulo(_) => unimplemented!(),
-            BinaryOp::OR(_) => unimplemented!(),
-            BinaryOp::POWER(_) => unimplemented!(),
-            BinaryOp::ShiftRight(_) => unimplemented!(),
-            BinaryOp::Minus(_) => unimplemented!(),
-            BinaryOp::Divide(_) => unimplemented!(),
-            BinaryOp::XOR(_) => unimplemented!(),
-        }
+            _ => {
+                if let Ok(lhs) = lhs.clone().downcast_rc::<IntObject>() {
+                    if let Ok(rhs) = rhs.clone().downcast_rc::<IntObject>() {
+                        return match self {
+                            BinaryOp::And(_) => {
+                                return IntObject::new_from_i32(lhs.value() & rhs.value());
+                            },
+                            BinaryOp::FloorDivide(_) => {
+                                return IntObject::new_from_i32(lhs.value() / rhs.value());
+                            },
+                            BinaryOp::ShiftLeft(_) => {
+                                return IntObject::new_from_i32(lhs.value() << rhs.value());
+                            },
+                            BinaryOp::MatrixMultiply(_) => {
+                                unimplemented!()
+                            },
+                            BinaryOp::Multiply(_) => {
+                                return IntObject::new_from_i32(lhs.value() * rhs.value());
+                            },
+                            BinaryOp::Modulo(_) => {
+                                return IntObject::new_from_i32(lhs.value() % rhs.value());
+                            },
+                            BinaryOp::OR(_) => {
+                                return IntObject::new_from_i32(lhs.value() | rhs.value());
+                            },
+                            BinaryOp::POWER(_) => {
+                                if rhs.value() < 0 {
+                                    panic!("the exponent number must be positive integer")
+                                }
+                                return IntObject::new_from_i32(lhs.value().pow(rhs.value() as u32));
+                            },
+                            BinaryOp::ShiftRight(_) => {
+                                return IntObject::new_from_i32(lhs.value() >> rhs.value());
+                            },
+                            BinaryOp::Minus(_) => {
+                                return IntObject::new_from_i32(lhs.value() - rhs.value());
+                            },
+                            BinaryOp::Divide(_) => {
+                                unimplemented!()
+                            },
+                            BinaryOp::XOR(_) => {
+                                return IntObject::new_from_i32(lhs.value() ^ rhs.value());
+                            },
+                            _ => unreachable!()
+                        };
+                    }
+                }
+
+            }
+        };
+        unreachable!()
     }
 }

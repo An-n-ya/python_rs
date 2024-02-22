@@ -10,16 +10,15 @@ use std::rc::Rc;
 
 use chrono::NaiveDateTime;
 use clap::Parser;
-use object::PyObject;
 use object::IntObject;
 use crate::interpreter::Interpreter;
 use crate::object::{CodeObject, DictObject, FalseObject, IntLongObject, ListObject, NoneObject, NullObject, ObjectType, SetObject, StringObject, TrueObject, TupleObject};
-use crate::utils::Magic;
+use crate::utils::{Magic, PyObject};
 
 
 pub(crate) struct InputStream {
     cursor: Cursor<Vec<u8>>,
-    refs: Vec<Rc<dyn PyObject>>,
+    refs: Vec<PyObject>,
     depths: u8
 }
 
@@ -98,11 +97,11 @@ impl InputStream {
         self.depths
     }
 
-    pub fn push_ref(&mut self, r: Rc<dyn PyObject>) {
+    pub fn push_ref(&mut self, r: PyObject) {
         self.refs.push(r);
     }
 
-    pub fn get_ref(&self, index: usize) -> Rc<dyn PyObject> {
+    pub fn get_ref(&self, index: usize) -> PyObject {
         self.refs.get(index).unwrap().clone()
     }
 }
@@ -213,11 +212,11 @@ impl PycParser {
         NaiveDateTime::from_timestamp_opt(timestamp.into(), 0).unwrap()
     }
 
-    pub fn marshal_object(stream: &mut InputStream, magic: Magic) -> Rc<dyn PyObject> {
+    pub fn marshal_object(stream: &mut InputStream, magic: Magic) -> PyObject {
         let object_type: ObjectType = (stream.read().unwrap() as char).into();
         stream.inc_depth();
 
-        let ret: Rc<dyn PyObject> = match object_type {
+        let ret: PyObject = match object_type {
             ObjectType::NULL => NullObject::new(),
             ObjectType::NONE => NoneObject::new(),
             ObjectType::FALSE => FalseObject::new(),

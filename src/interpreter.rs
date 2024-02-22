@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 use crate::frame::Frame as FrameRaw;
-use crate::object::{CallableObject, CodeObject, FalseObject, IntObject, NoneObject, NullObject, PyObject as PyObjectTrait, StringObject, TrueObject};
+use crate::object::{CallableObject, CodeObject, FalseObject, IntObject, NoneObject, NullObject, StringObject, TrueObject};
 use crate::utils::ByteCode::*;
-use crate::utils::{BinaryOp, ByteCode, CmpOP};
+use crate::utils::{BinaryOp, ByteCode, CmpOP, PyObject};
 
 
-type PyObject = Rc<dyn PyObjectTrait>;
 type Frame = Option<Box<FrameRaw>>;
 pub struct Interpreter {
     cur_frame: Frame,

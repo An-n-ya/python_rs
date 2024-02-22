@@ -1,5 +1,5 @@
 use crate::object::BasePycObject;
-use crate::object::PyObject;
+use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -7,9 +7,11 @@ use std::rc::Rc;
 use crate::{InputStream, PycParser};
 use crate::utils::Magic;
 
+use crate::utils::PyObject;
+
 pub struct ListObject {
     base: BasePycObject,
-    values: Vec<Rc<dyn PyObject>>
+    values: Vec<PyObject>
 }
 
 impl ListObject {
@@ -48,7 +50,7 @@ impl PartialEq<Self> for ListObject {
 }
 
 impl Eq for ListObject{}
-impl PyObject for ListObject {
+impl PyObjectTrait for ListObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

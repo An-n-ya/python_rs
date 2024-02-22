@@ -1,22 +1,23 @@
 use crate::object::{BasePycObject, CodeObject};
-use crate::object::PyObject;
+use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
+use crate::utils::PyObject;
 
-type NativeFn = Box<dyn Fn(Vec<Rc<dyn PyObject>>) -> Rc<dyn PyObject>>;
+type NativeFn = Box<dyn Fn(Vec<PyObject>) -> PyObject>;
 
 pub struct CallableObject {
     base: BasePycObject,
     code: Option<Rc<CodeObject>>,
-    defaults: Vec<Rc<dyn PyObject>>,
+    defaults: Vec<PyObject>,
     is_native: bool,
     native_fn: Option<NativeFn>
 }
 
 impl CallableObject {
-    pub fn new(code: Rc<CodeObject>, defaults: Vec<Rc<dyn PyObject>>) -> Rc<Self> {
+    pub fn new(code: Rc<CodeObject>, defaults: Vec<PyObject>) -> Rc<Self> {
         Rc::new(Self {
             base: BasePycObject::new_from_char('C'),
             code: Some(code),
@@ -40,11 +41,11 @@ impl CallableObject {
         assert!(!self.is_native);
         self.code.clone().unwrap().clone()
     }
-    pub fn defaults(&self) -> &Vec<Rc<dyn PyObject>>{
+    pub fn defaults(&self) -> &Vec<PyObject>{
         assert!(!self.is_native);
         &self.defaults
     }
-    pub fn call_native(&self, args: Vec<Rc<dyn PyObject>>) -> Rc<dyn PyObject> {
+    pub fn call_native(&self, args: Vec<PyObject>) -> PyObject {
         assert!(self.is_native);
         assert!(self.native_fn.is_some());
         let f = self.native_fn.as_ref().unwrap();
@@ -70,7 +71,7 @@ impl Hash for CallableObject {
     }
 }
 
-impl PyObject for CallableObject {
+impl PyObjectTrait for CallableObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

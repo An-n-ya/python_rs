@@ -1,5 +1,5 @@
 use crate::object::BasePycObject;
-use crate::object::PyObject;
+use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -7,9 +7,11 @@ use std::rc::Rc;
 use crate::{InputStream, PycParser};
 use crate::utils::Magic;
 
+use crate::utils::PyObject;
+
 pub struct TupleObject {
     base: BasePycObject,
-    values: Vec<Rc<dyn PyObject>>
+    values: Vec<PyObject>
 }
 
 impl TupleObject {
@@ -35,10 +37,10 @@ impl TupleObject {
     }
 
     #[allow(dead_code)]
-    pub fn take_values(self) -> Vec<Rc<dyn PyObject>> {
+    pub fn take_values(self) -> Vec<PyObject> {
         self.values
     }
-    pub fn values(&self) -> &Vec<Rc<dyn PyObject>> {
+    pub fn values(&self) -> &Vec<PyObject> {
         &self.values
     }
 }
@@ -68,7 +70,7 @@ impl Hash for TupleObject {
     }
 }
 
-impl PyObject for TupleObject {
+impl PyObjectTrait for TupleObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

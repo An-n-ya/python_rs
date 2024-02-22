@@ -1,5 +1,5 @@
 use crate::object::BasePycObject;
-use crate::object::PyObject;
+use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -66,7 +66,7 @@ impl Hash for StringObject {
         self.data.hash(state)
     }
 }
-impl PyObject for StringObject {
+impl PyObjectTrait for StringObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

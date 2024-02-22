@@ -83,12 +83,12 @@ impl From<char> for ObjectType {
     }
 }
 
-pub trait PyObject: Debug + Display + Downcast + DynEq + DynHash {
+pub trait PyObjectTrait: Debug + Display + Downcast + DynEq + DynHash {
     fn object_type(&self) -> ObjectType;
 }
-impl_downcast!(PyObject);
-dyn_eq::eq_trait_object!(PyObject);
-dyn_hash::hash_trait_object!(PyObject);
+impl_downcast!(PyObjectTrait);
+dyn_eq::eq_trait_object!(PyObjectTrait);
+dyn_hash::hash_trait_object!(PyObjectTrait);
 
 pub(crate) struct BasePycObject {
     _type: ObjectType

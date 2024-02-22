@@ -1,5 +1,5 @@
 use crate::object::{BasePycObject, StringObject, TupleObject};
-use crate::object::PyObject as PyObjectTrait;
+use crate::object::PyObjectTrait as PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -8,7 +8,8 @@ use crate::{InputStream, PycParser};
 use crate::utils::ByteCode;
 use crate::utils::Magic::{self, *};
 
-type PyObject = Option<Rc<dyn PyObjectTrait>>;
+use crate::utils::PyObject;
+type PyObjectOption = Option<PyObject>;
 #[allow(unused)]
 pub struct CodeObject {
     base: BasePycObject,
@@ -19,18 +20,18 @@ pub struct CodeObject {
     num_stack: Option<u32>,
     flags: Option<u32>,
     code: Option<Vec<u8>>,
-    constants: PyObject,
-    names: PyObject,
-    local_names: PyObject,
-    local_kinds: PyObject,
-    free_vars: PyObject,
-    cell_vars: PyObject,
-    file_name: PyObject,
-    name: PyObject,
-    qualified_name: PyObject,
+    constants: PyObjectOption,
+    names: PyObjectOption,
+    local_names: PyObjectOption,
+    local_kinds: PyObjectOption,
+    free_vars: PyObjectOption,
+    cell_vars: PyObjectOption,
+    file_name: PyObjectOption,
+    name: PyObjectOption,
+    qualified_name: PyObjectOption,
     first_line: Option<u32>,
-    line_table: PyObject,
-    exception_table: PyObject,
+    line_table: PyObjectOption,
+    exception_table: PyObjectOption,
 
 }
 
@@ -181,18 +182,21 @@ impl CodeObject {
         return res;
     }
 
-    pub fn consts(&self) -> Vec<Rc<dyn PyObjectTrait>> {
+    pub fn consts(&self) -> Vec<PyObject> {
         // constants should be tuple
         let tuple = self.constants.clone().unwrap().downcast_rc::<TupleObject>().unwrap();
         tuple.values().clone()
     }
-    pub fn names(&self) -> Vec<Rc<dyn PyObjectTrait>> {
+    pub fn names(&self) -> Vec<PyObject> {
         // constants should be tuple
         let tuple = self.names.clone().unwrap().downcast_rc::<TupleObject>().unwrap();
         tuple.values().clone()
     }
     pub fn code(&self) -> Vec<u8> {
         self.code.clone().unwrap().clone()
+    }
+    pub fn num_stack(&self) -> u32 {
+        self.num_stack.unwrap()
     }
 
     #[allow(dead_code)]

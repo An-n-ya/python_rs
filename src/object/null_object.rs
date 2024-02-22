@@ -1,5 +1,5 @@
 use crate::object::BasePycObject;
-use crate::object::PyObject;
+use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -29,7 +29,7 @@ impl Hash for NullObject {
         panic!("{}", format!("cannot hash {:?}", self.object_type()))
     }
 }
-impl PyObject for NullObject {
+impl PyObjectTrait for NullObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }

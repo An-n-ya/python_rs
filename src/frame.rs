@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 use crate::InputStream;
-use crate::object::{CallableObject, CodeObject, PyObject as PyObjectTrait};
+use crate::object::{CallableObject, CodeObject, PyObjectTrait as PyObjectTrait};
 use crate::utils::ByteCode;
 
 type PyObject = Rc<dyn PyObjectTrait>;
@@ -20,7 +20,7 @@ pub struct Frame {
 impl Frame {
     pub fn new_from_code(code: Rc<CodeObject>) -> Self {
         Self {
-            stack: vec![],
+            stack: Vec::with_capacity(code.num_stack() as usize),
             code: InputStream::new(code.code()),
             locals: Default::default(),
             globals: Default::default(),
