@@ -1,7 +1,8 @@
+use std::cell::RefCell;
 use std::fmt::{Debug, Display};
+use std::rc::Rc;
 use downcast_rs::{Downcast, impl_downcast};
 use dyn_eq::DynEq;
-use dyn_hash::DynHash;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 #[allow(unused, non_camel_case_types)]
@@ -39,6 +40,11 @@ pub enum ObjectType{
 
     // runtime object
     CALLABLE
+}
+impl Default for ObjectType {
+    fn default() -> Self {
+        Self::NULL
+    }
 }
 
 const FLAG_REF: u8 = 0x80;
@@ -83,13 +89,16 @@ impl From<char> for ObjectType {
     }
 }
 
-pub trait PyObjectTrait: Debug + Display + Downcast + DynEq + DynHash {
+pub trait PyObjectTrait: Debug + Display + Downcast + DynEq {
     fn object_type(&self) -> ObjectType;
+    fn hash_key(&self) -> String {
+        panic!("{}", format!("cannot hash {:?}", self.object_type()))
+    }
 }
 impl_downcast!(PyObjectTrait);
 dyn_eq::eq_trait_object!(PyObjectTrait);
-dyn_hash::hash_trait_object!(PyObjectTrait);
 
+#[derive(Default)]
 pub(crate) struct BasePycObject {
     _type: ObjectType
 }
@@ -103,6 +112,10 @@ impl BasePycObject {
     pub fn new_from_char(c: char) -> Self {
         let _type: ObjectType = c.into();
         Self::new(_type)
+    }
+
+    pub fn new_py_object<T>(obj: T) -> Rc<RefCell<T>> {
+        Rc::new(RefCell::new(obj))
     }
 
     pub fn object_type(&self) -> ObjectType {

@@ -2,24 +2,17 @@ use crate::object::BasePycObject;
 use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
+use crate::utils::PyObject;
 
 pub struct FalseObject {
     base: BasePycObject,
 }
 
 impl FalseObject {
-    pub fn new() -> Rc<Self> {
-        Rc::new(Self {
+    pub fn new() -> PyObject {
+        BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('F'),
         })
-    }
-}
-
-impl Hash for FalseObject {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        panic!("{}", format!("cannot hash {:?}", self.object_type()))
     }
 }
 impl PartialEq<Self> for FalseObject {

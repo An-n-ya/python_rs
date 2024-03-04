@@ -3,8 +3,8 @@ use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 use crate::InputStream;
+use crate::utils::PyObject;
 
 pub struct StringObject {
     base: BasePycObject,
@@ -12,22 +12,23 @@ pub struct StringObject {
 }
 
 impl StringObject {
-    pub fn new(stream: &mut InputStream) -> Rc<Self> {
+    pub fn new(stream: &mut InputStream) -> PyObject {
         let length = stream.read_u32().unwrap();
-        Rc::new(Self::_new(stream, length))
+        BasePycObject::new_py_object(Self::_new(stream, length))
     }
-    pub fn new_from_short(stream: &mut InputStream) -> Rc<Self> {
+    pub fn new_from_short(stream: &mut InputStream) -> PyObject {
         let length = stream.read().unwrap();
-        Rc::new(Self::_new(stream, length as u32))
+        BasePycObject::new_py_object(Self::_new(stream, length as u32))
     }
 
-    pub fn new_from_unicode(stream: &mut InputStream) -> Rc<Self> {
+    pub fn new_from_unicode(stream: &mut InputStream) -> PyObject {
         let length = stream.read_u32().unwrap();
-        Rc::new(Self::_new(stream, length))
+        BasePycObject::new_py_object(Self::_new(stream, length))
     }
 
-    pub fn new_from_str(s: &str) -> Rc<Self> {
-        Rc::new(Self {
+    #[allow(dead_code)]
+    pub fn new_from_str(s: &str) -> PyObject {
+        BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('s'),
             data: s.to_string().as_bytes().to_vec(),
         })
@@ -69,6 +70,11 @@ impl Hash for StringObject {
 impl PyObjectTrait for StringObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
+    }
+    fn hash_key(&self) -> String {
+        let mut res = "$String_".to_string();
+        res.push_str(&self.string());
+        res
     }
 }
 

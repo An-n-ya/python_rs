@@ -4,7 +4,9 @@ mod interpreter;
 mod frame;
 
 use core::fmt;
-use std::{fs::File, io::{Cursor, Read, Seek, self}};
+use std::{fs::File, io::{Cursor, Read, Seek, self}, mem};
+use std::cell::RefCell;
+use std::ops::DerefMut;
 use std::process::{Command};
 use std::rc::Rc;
 
@@ -13,7 +15,7 @@ use clap::Parser;
 use object::IntObject;
 use crate::interpreter::Interpreter;
 use crate::object::{CodeObject, DictObject, FalseObject, IntLongObject, ListObject, NoneObject, NullObject, ObjectType, SetObject, StringObject, TrueObject, TupleObject};
-use crate::utils::{Magic, PyObject};
+use crate::utils::{DowncastTrait, Magic, PyObject};
 
 
 pub(crate) struct InputStream {
@@ -108,7 +110,7 @@ impl InputStream {
 
 struct PycParser {
     header: PycHeader,
-    code_object: Rc<CodeObject>
+    code_object: Rc<RefCell<CodeObject>>
 }
 
 struct PycHeader {
@@ -137,7 +139,6 @@ struct Args {
     #[arg(long, short, action)]
     no_run: bool,
     file: String,
-
 }
 
 fn main() {
@@ -147,7 +148,7 @@ fn main() {
         std::process::exit(0);
     }
 
-    Command::new("compileall2")
+    Command::new("/home/annya/miniconda3/bin/compileall2")
         .arg(&args.file)
         .output()
         .expect(&format!("failed to compile {}", &args.file));
@@ -186,8 +187,12 @@ impl PycParser {
             timestamp,
             size
         };
-        let code_object = Self::marshal_object(&mut stream, magic).downcast_rc::<CodeObject>().unwrap();
-        Self {header, code_object}
+        let code_object = Self::marshal_object(&mut stream, magic);
+        let mut code_object = code_object.downcast_refcell_mut::<CodeObject>().unwrap();
+        let code_object = code_object.deref_mut();
+        let mut new_code_obj = CodeObject::default();
+        mem::swap(&mut new_code_obj, code_object);
+        Self {header, code_object: Rc::new(RefCell::new(new_code_obj))}
     }
 
     pub fn print_info(&self) {
@@ -310,8 +315,8 @@ mod tests {
         let return_value = interpreter.return_value();
         assert!(return_value.is_some());
         let return_value = return_value.unwrap();
-        let return_value = return_value.downcast_rc::<NoneObject>().expect("return value should be NoneObject");
-        assert_eq!(return_value, NoneObject::new());
+        let return_value = return_value.downcast_refcell::<NoneObject>().expect("return value should be NoneObject");
+        assert_eq!(*return_value, NoneObject::new_raw());
     }
 
     // #[test]

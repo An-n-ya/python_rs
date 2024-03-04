@@ -3,9 +3,8 @@ use crate::object::BasePycObject;
 use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 use crate::InputStream;
+use crate::utils::PyObject;
 
 pub struct IntObject {
     base: BasePycObject,
@@ -13,15 +12,15 @@ pub struct IntObject {
 }
 
 impl IntObject {
-    pub fn new(stream: &mut InputStream) -> Rc<Self> {
-        Rc::new(Self {
+    pub fn new(stream: &mut InputStream) -> PyObject {
+        BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('i'),
             value: stream.read_i32().unwrap()
         })
     }
 
-    pub fn new_from_i32(value: i32) -> Rc<Self> {
-        Rc::new(Self {
+    pub fn new_from_i32(value: i32) -> PyObject {
+        BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('i'),
             value
         })
@@ -49,14 +48,15 @@ impl PartialEq<Self> for IntObject {
 }
 
 impl Eq for IntObject {}
-impl Hash for IntObject {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.value.hash(state)
-    }
-}
 impl PyObjectTrait for IntObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
+    }
+
+    fn hash_key(&self) -> String {
+        let mut res = "$Int_".to_string();
+        res.push_str(&self.value.to_string());
+        res
     }
 }
 

@@ -2,18 +2,23 @@ use crate::object::BasePycObject;
 use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
+use crate::utils::PyObject;
 
 pub struct NoneObject {
     base: BasePycObject,
 }
 
 impl NoneObject {
-    pub fn new() -> Rc<Self> {
-        Rc::new(Self {
+    pub fn new() -> PyObject {
+        BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('N'),
         })
+    }
+    #[allow(dead_code)]
+    pub fn new_raw() -> Self {
+        Self {
+            base: BasePycObject::new_from_char('N'),
+        }
     }
 }
 
@@ -24,11 +29,6 @@ impl PartialEq<Self> for NoneObject {
 }
 
 impl Eq for NoneObject{}
-impl Hash for NoneObject {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        panic!("{}", format!("cannot hash {:?}", self.object_type()))
-    }
-}
 impl PyObjectTrait for NoneObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()

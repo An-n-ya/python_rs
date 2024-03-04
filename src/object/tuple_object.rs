@@ -3,7 +3,6 @@ use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 use crate::{InputStream, PycParser};
 use crate::utils::Magic;
 
@@ -15,14 +14,14 @@ pub struct TupleObject {
 }
 
 impl TupleObject {
-    pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> PyObject {
         let length = stream.read_u32().unwrap();
-        Rc::new(Self::_new(stream, magic, length))
+        BasePycObject::new_py_object(Self::_new(stream, magic, length))
     }
 
-    pub fn new_from_short(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
+    pub fn new_from_short(stream: &mut InputStream, magic: Magic) -> PyObject {
         let length = stream.read().unwrap();
-        Rc::new(Self::_new(stream, magic, length as u32))
+        BasePycObject::new_py_object(Self::_new(stream, magic, length as u32))
     }
 
     fn _new(stream: &mut InputStream, magic: Magic, length: u32) -> Self {
@@ -65,14 +64,17 @@ impl Eq for TupleObject {}
 
 impl Hash for TupleObject {
     fn hash<H: Hasher>(&self, _state: &mut H) {
-        // TODO: tuple should be hashable
-        unimplemented!()
     }
 }
 
 impl PyObjectTrait for TupleObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
+    }
+
+    fn hash_key(&self) -> String {
+        // TODO: tuple should be hashable
+        unimplemented!()
     }
 }
 
@@ -83,7 +85,7 @@ impl fmt::Display for TupleObject {
             if i != 0 {
                 write!(f, ", ").unwrap();
             }
-            write!(f, "{}", entry).unwrap();
+            write!(f, "{}", entry.borrow()).unwrap();
         }
         write!(f, ")")
     }

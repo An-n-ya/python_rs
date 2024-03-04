@@ -1,24 +1,26 @@
+use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 use crate::InputStream;
-use crate::object::{CallableObject, CodeObject, PyObjectTrait as PyObjectTrait};
+use crate::object::{CallableObject, CodeObject};
 use crate::utils::ByteCode;
+use crate::utils::PyObject;
 
-type PyObject = Rc<dyn PyObjectTrait>;
 
 pub struct Frame {
     stack: Vec<PyObject>,
     code: InputStream,
-    locals: HashMap<PyObject, PyObject>,
+    locals: HashMap<String, PyObject>,
     fast_locals: HashMap<u8, PyObject>,
-    globals: HashMap<PyObject, PyObject>,
+    globals: HashMap<String, PyObject>,
     names: Vec<PyObject>,
     consts: Vec<PyObject>,
     parent: Option<Box<Frame>>
 }
 
 impl Frame {
-    pub fn new_from_code(code: Rc<CodeObject>) -> Self {
+    pub fn new_from_code(code: Rc<RefCell<CodeObject>>) -> Self {
+        let code = code.borrow();
         Self {
             stack: Vec::with_capacity(code.num_stack() as usize),
             code: InputStream::new(code.code()),
@@ -31,9 +33,11 @@ impl Frame {
         }
     }
 
-    pub fn new_from_callable(callable: Rc<CallableObject>, args: Vec<PyObject>) -> Self {
+    pub fn new_from_callable(callable: Ref<CallableObject>, args: Vec<PyObject>) -> Self {
         let mut fast_locals: HashMap<u8, PyObject> = HashMap::new();
-        let num_args = callable.code().num_args();
+        let code = callable.code();
+        let code = code.borrow();
+        let num_args = code.num_args();
         let default_args = callable.defaults().len();
         let mut j = num_args;
         for i in (0..default_args).rev() {
@@ -46,12 +50,12 @@ impl Frame {
 
         Self {
             stack: vec![],
-            code: InputStream::new(callable.code().code()),
+            code: InputStream::new(code.code()),
             locals: Default::default(),
             globals: Default::default(),
             fast_locals,
-            names: callable.code().names(),
-            consts: callable.code().consts(),
+            names: code.names(),
+            consts: code.consts(),
             parent: None,
         }
     }
@@ -114,21 +118,21 @@ impl Frame {
     }
 
     pub fn set_local(&mut self, key: PyObject, value: PyObject) {
-        self.locals.insert(key, value);
+        self.locals.insert(key.borrow().hash_key(), value);
     }
 
     pub fn look_up_name(&self, name: PyObject) -> Option<PyObject> {
-        if let Some(res) = self.locals.get(&name) {
+        if let Some(res) = self.locals.get(&name.borrow().hash_key()) {
             return Some(res.clone());
         }
-        if let Some(res) = self.globals.get(&name) {
+        if let Some(res) = self.globals.get(&name.borrow().hash_key()) {
             return Some(res.clone());
         }
         None
     }
 
     pub fn look_up_global(&self, name: PyObject) -> Option<PyObject> {
-        if let Some(res) = self.globals.get(&name) {
+        if let Some(res) = self.globals.get(&name.borrow().hash_key()) {
             return Some(res.clone());
         }
         None

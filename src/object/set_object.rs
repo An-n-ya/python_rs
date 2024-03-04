@@ -2,8 +2,6 @@ use crate::object::BasePycObject;
 use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 use crate::{InputStream, PycParser};
 use crate::utils::{Magic, PyObject};
 
@@ -13,13 +11,13 @@ pub struct SetObject {
 }
 
 impl SetObject {
-    pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> PyObject {
         let length = stream.read_u32().unwrap();
         let mut values = vec![];
         for _ in 0..length {
             values.push(PycParser::marshal_object(stream, magic));
         }
-        Rc::new(Self {
+        BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('<'),
             values
         })
@@ -43,11 +41,6 @@ impl PartialEq<Self> for SetObject {
 }
 
 impl Eq for SetObject {}
-impl Hash for SetObject {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        panic!("{}", format!("cannot hash {:?}", self.object_type()))
-    }
-}
 impl PyObjectTrait for SetObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
@@ -61,7 +54,7 @@ impl fmt::Display for SetObject {
             if i != 0 {
                 write!(f, ", ").unwrap();
             }
-            write!(f, "{}", entry).unwrap();
+            write!(f, "{}", entry.borrow()).unwrap();
         }
         write!(f, "}}")
     }

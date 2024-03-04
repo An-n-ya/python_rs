@@ -2,9 +2,8 @@ use crate::object::BasePycObject;
 use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 use crate::InputStream;
+use crate::utils::PyObject;
 
 pub struct IntLongObject {
     base: BasePycObject,
@@ -12,8 +11,8 @@ pub struct IntLongObject {
 }
 
 impl IntLongObject {
-    pub fn new(stream: &mut InputStream) -> Rc<Self> {
-        Rc::new(Self {
+    pub fn new(stream: &mut InputStream) -> PyObject {
+        BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('I'),
             value: stream.read_i64().unwrap()
         })
@@ -26,15 +25,16 @@ impl PartialEq<Self> for IntLongObject {
     }
 }
 
-impl Hash for IntLongObject {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.value.hash(state);
-    }
-}
 impl Eq for IntLongObject{}
 impl PyObjectTrait for IntLongObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
+    }
+
+    fn hash_key(&self) -> String {
+        let mut res = "$IntLong_".to_string();
+        res.push_str(&self.value.to_string());
+        res
     }
 }
 

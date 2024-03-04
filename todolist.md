@@ -1,2 +1,3 @@
 - embedding compileall2 into main, in order to parse .py file directly ✅
-- support `for` `while` `if` statement 
+- support `while` `if` statement ✅
+- support `for` statement 

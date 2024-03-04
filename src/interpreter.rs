@@ -1,22 +1,23 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use crate::frame::Frame as FrameRaw;
-use crate::object::{CallableObject, CodeObject, FalseObject, IntObject, NoneObject, NullObject, StringObject, TrueObject};
+use crate::object::{CallableObject, CodeObject, FalseObject, IntObject, NoneObject, NullObject, TrueObject};
 use crate::utils::ByteCode::*;
-use crate::utils::{BinaryOp, ByteCode, CmpOP, PyObject};
+use crate::utils::{BinaryOp, ByteCode, CmpOP, DowncastTrait, PyObject};
 
 
 type Frame = Option<Box<FrameRaw>>;
 pub struct Interpreter {
     cur_frame: Frame,
     return_value: Option<PyObject>,
-    builtins: HashMap<PyObject, PyObject>
+    builtins: HashMap<String, PyObject>
 }
 
 fn native_print(args: Vec<PyObject>) -> PyObject {
     for arg in args {
         // FIXME: print problem in function.py
-        print!("{}", arg);
+        print!("{}", arg.borrow());
         // print!("hello");
     }
     println!();
@@ -25,7 +26,7 @@ fn native_print(args: Vec<PyObject>) -> PyObject {
 
 impl Interpreter {
     const CMP_OP: [CmpOP; 6] = [CmpOP::LT, CmpOP::LE, CmpOP::EQ, CmpOP::NEQ, CmpOP::GT, CmpOP::GE];
-    pub fn new(code: Rc<CodeObject>) -> Self {
+    pub fn new(code: Rc<RefCell<CodeObject>>) -> Self {
         let builtins = Self::setup_builtins();
 
         Self {
@@ -35,12 +36,12 @@ impl Interpreter {
         }
     }
 
-    fn setup_builtins() -> HashMap<PyObject, PyObject> {
-        let mut builtins: HashMap<PyObject, PyObject> = HashMap::new();
-        builtins.insert(StringObject::new_from_str("True"), TrueObject::new());
-        builtins.insert(StringObject::new_from_str("False"), FalseObject::new());
-        builtins.insert(StringObject::new_from_str("None"), NoneObject::new());
-        builtins.insert(StringObject::new_from_str("print"), CallableObject::new_native(Box::new(native_print)));
+    fn setup_builtins() -> HashMap<String, PyObject> {
+        let mut builtins: HashMap<String, PyObject> = HashMap::new();
+        builtins.insert("$String_True".to_string(), TrueObject::new());
+        builtins.insert("$String_False".to_string(), FalseObject::new());
+        builtins.insert("$String_None".to_string(), NoneObject::new());
+        builtins.insert("$String_print".to_string(), CallableObject::new_native(Box::new(native_print)));
 
         builtins
     }
@@ -66,8 +67,8 @@ impl Interpreter {
                         }
                         let obj = cur_frame.pop();
                         let obj2 = cur_frame.pop();
-                        if obj2.downcast_rc::<NullObject>().is_ok() {
-                            let callable = obj.downcast_rc::<CallableObject>().expect("invalid callable object");
+                        if obj2.downcast_refcell::<NullObject>().is_some() {
+                            let callable = obj.downcast_refcell::<CallableObject>().expect("invalid callable object");
                             if !callable.is_native() {
                                 next_frame = Some(Box::new(FrameRaw::new_from_callable(callable, fn_arg)));
                                 break
@@ -80,7 +81,8 @@ impl Interpreter {
                         }
                     },
                     MAKE_FUNCTION => {
-                        let code = cur_frame.pop().downcast_rc::<CodeObject>().expect("invalid code object");
+                        let code = cur_frame.pop();
+                        let code = code.downcast_refcell::<CodeObject>().expect("invalid code object");
                         let arg = arg.unwrap();
                         let mut defaults: Vec<PyObject> = vec![];
                         for _ in 0..arg {
@@ -106,7 +108,7 @@ impl Interpreter {
                         let name = cur_frame.get_name(arg.unwrap() as usize);
                         if let Some(obj) = cur_frame.look_up_name(name.clone()) {
                             cur_frame.push(obj);
-                        } else if let Some(obj) = self.builtins.get(&name) {
+                        } else if let Some(obj) = self.builtins.get(&name.borrow().hash_key()) {
                             cur_frame.push(obj.clone());
                         } else {
                             // TODO: enclosing missing
@@ -124,7 +126,7 @@ impl Interpreter {
                         let name = cur_frame.get_name(arg as usize);
                         if let Some(obj) = cur_frame.look_up_global(name.clone()) {
                             cur_frame.push(obj);
-                        } else if let Some(obj) = self.builtins.get(&name) {
+                        } else if let Some(obj) = self.builtins.get(&name.borrow().hash_key()) {
                             cur_frame.push(obj.clone());
                         } else {
                             // TODO: enclosing missing
@@ -150,47 +152,46 @@ impl Interpreter {
                         let rhs = cur_frame.pop();
                         let lhs = cur_frame.pop();
                         // we suppose that lhs and rhs should be number
-                        let lhs = lhs.clone()
-                            .downcast_rc::<IntObject>()
-                            .expect(&format!("{:?} cannot be compared", lhs.object_type()));
-                        let rhs = rhs.clone()
-                            .downcast_rc::<IntObject>()
-                            .expect(&format!("{:?} cannot be compared", rhs.object_type()));
+                        let lhs = lhs
+                            .downcast_refcell::<IntObject>()
+                            .expect(&format!("{:?} cannot be compared", lhs.borrow().object_type()));
+                        let rhs = rhs.downcast_refcell::<IntObject>()
+                            .expect(&format!("{:?} cannot be compared", rhs.borrow().object_type()));
                         let op = &Self::CMP_OP[arg as usize];
                         match op {
-                            CmpOP::GT =>cur_frame.push(Self::new_bool_object(lhs > rhs)),
-                            CmpOP::GE =>cur_frame.push(Self::new_bool_object(lhs >= rhs)),
-                            CmpOP::LT =>cur_frame.push(Self::new_bool_object(lhs < rhs)),
-                            CmpOP::LE =>cur_frame.push(Self::new_bool_object(lhs <= rhs)),
-                            CmpOP::EQ =>cur_frame.push(Self::new_bool_object(lhs == rhs)),
-                            CmpOP::NEQ =>cur_frame.push(Self::new_bool_object(lhs != rhs)),
+                            CmpOP::GT =>cur_frame.push(Self::new_bool_object(lhs.value() > rhs.value())),
+                            CmpOP::GE =>cur_frame.push(Self::new_bool_object(lhs.value() >= rhs.value())),
+                            CmpOP::LT =>cur_frame.push(Self::new_bool_object(lhs.value() < rhs.value())),
+                            CmpOP::LE =>cur_frame.push(Self::new_bool_object(lhs.value() <= rhs.value())),
+                            CmpOP::EQ =>cur_frame.push(Self::new_bool_object(lhs.value() == rhs.value())),
+                            CmpOP::NEQ =>cur_frame.push(Self::new_bool_object(lhs.value() != rhs.value())),
                         }
                     },
                     POP_JUMP_BACKWARD_IF_NOT_NONE | POP_JUMP_FORWARD_IF_NOT_NONE => {
                         let arg = arg.unwrap();
                         let tos = cur_frame.pop();
-                        if tos.downcast_rc::<NoneObject>().is_err() {
+                        if tos.downcast_refcell::<NoneObject>().is_none() {
                             cur_frame.jump_offset(Self::get_jump_offset(bytecode, arg));
                         }
                     },
                     POP_JUMP_FORWARD_IF_NONE | POP_JUMP_BACKWARD_IF_NONE => {
                         let arg = arg.unwrap();
                         let tos = cur_frame.pop();
-                        if tos.downcast_rc::<NoneObject>().is_ok() {
+                        if tos.downcast_refcell::<NoneObject>().is_some() {
                             cur_frame.jump_offset(Self::get_jump_offset(bytecode, arg));
                         }
                     },
                     POP_JUMP_BACKWARD_IF_TRUE | POP_JUMP_FORWARD_IF_TRUE =>{
                         let arg = arg.unwrap() ;
                         let tos = cur_frame.pop();
-                        if tos.downcast_rc::<TrueObject>().is_ok() {
+                        if tos.downcast_refcell::<TrueObject>().is_some() {
                             cur_frame.jump_offset(Self::get_jump_offset(bytecode, arg));
                         }
                     },
                     POP_JUMP_BACKWARD_IF_FALSE | POP_JUMP_FORWARD_IF_FALSE =>{
                         let arg = arg.unwrap();
                         let tos = cur_frame.pop();
-                        if tos.downcast_rc::<FalseObject>().is_ok() {
+                        if tos.downcast_refcell::<FalseObject>().is_some() {
                             cur_frame.jump_offset(Self::get_jump_offset(bytecode, arg));
                         }
                     },

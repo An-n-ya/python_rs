@@ -1,8 +1,9 @@
+use std::cell::{Ref, RefCell};
 use crate::object::{BasePycObject, CodeObject};
 use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
-use std::fmt;
-use std::hash::{Hash, Hasher};
+use std::{fmt, mem};
+use std::ops::Deref;
 use std::rc::Rc;
 use crate::utils::PyObject;
 
@@ -10,25 +11,28 @@ type NativeFn = Box<dyn Fn(Vec<PyObject>) -> PyObject>;
 
 pub struct CallableObject {
     base: BasePycObject,
-    code: Option<Rc<CodeObject>>,
+    code: Option<Rc<RefCell<CodeObject>>>,
     defaults: Vec<PyObject>,
     is_native: bool,
     native_fn: Option<NativeFn>
 }
 
 impl CallableObject {
-    pub fn new(code: Rc<CodeObject>, defaults: Vec<PyObject>) -> Rc<Self> {
-        Rc::new(Self {
+    pub fn new(code: Ref<CodeObject>, defaults: Vec<PyObject>) -> PyObject {
+        let code = code.deref();
+        // FIXME: maybe we should use mem::swap?
+        let code:CodeObject = unsafe {mem::transmute_copy(code)};
+        BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('C'),
-            code: Some(code),
+            code: Some(Rc::new(RefCell::new(code))),
             defaults,
             is_native: false,
             native_fn: None
         })
     }
 
-    pub fn new_native(f: NativeFn) -> Rc<Self> {
-        Rc::new(Self {
+    pub fn new_native(f: NativeFn) -> PyObject {
+        BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('C'),
             code: None,
             defaults: vec![],
@@ -37,7 +41,7 @@ impl CallableObject {
         })
     }
 
-    pub fn code(&self) -> Rc<CodeObject>{
+    pub fn code(&self) -> Rc<RefCell<CodeObject>>{
         assert!(!self.is_native);
         self.code.clone().unwrap().clone()
     }
@@ -65,11 +69,6 @@ impl PartialEq<Self> for CallableObject {
 
 impl Eq for CallableObject {}
 
-impl Hash for CallableObject {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        panic!("{}", format!("cannot hash {:?}", self.object_type()))
-    }
-}
 
 impl PyObjectTrait for CallableObject {
     fn object_type(&self) -> ObjectType {

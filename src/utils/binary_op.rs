@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use crate::object::{IntObject};
 
-use crate::utils::PyObject;
+use crate::utils::{DowncastTrait, PyObject};
 pub enum BinaryOp{
     Add(bool),
     And(bool),
@@ -94,16 +94,16 @@ impl BinaryOp {
                 // FIXME: when it is BinaryOp::Add(true), we should operate in-place
                 // but the PyObject is a Rc, which is immutable
                 // we should use RefCell
-                if let Ok(lhs) = lhs.clone().downcast_rc::<IntObject>() {
-                    if let Ok(rhs) = rhs.clone().downcast_rc::<IntObject>() {
+                if let Some(lhs) = lhs.clone().downcast_refcell::<IntObject>() {
+                    if let Some(rhs) = rhs.clone().downcast_refcell::<IntObject>() {
                         return IntObject::new_from_i32(lhs.value() + rhs.value())
                     }
                 }
                 panic!("cannot perform add on {lhs:?} and {rhs:?}");
             },
             _ => {
-                if let Ok(lhs) = lhs.clone().downcast_rc::<IntObject>() {
-                    if let Ok(rhs) = rhs.clone().downcast_rc::<IntObject>() {
+                if let Some(lhs) = lhs.clone().downcast_refcell::<IntObject>() {
+                    if let Some(rhs) = rhs.clone().downcast_refcell::<IntObject>() {
                         return match self {
                             BinaryOp::And(_) => {
                                 return IntObject::new_from_i32(lhs.value() & rhs.value());

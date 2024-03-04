@@ -2,8 +2,6 @@ use crate::object::{BasePycObject};
 use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 use crate::{InputStream, PycParser};
 use crate::utils::{Magic, PyObject};
 
@@ -19,28 +17,23 @@ struct DictEntry {
 
 
 impl DictObject {
-    pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> PyObject {
         let mut entries = vec![];
         loop {
             let key = PycParser::marshal_object(stream, magic);
-            if key.object_type() == ObjectType::NULL {
+            if key.borrow().object_type() == ObjectType::NULL {
                 break
             }
             let value = PycParser::marshal_object(stream, magic);
             entries.push(DictEntry{key, value});
         }
-        Rc::new(Self {
+        BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('{'),
             entries
         })
     }
 }
 
-impl Hash for DictObject {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        panic!("{}", format!("cannot hash {:?}", self.object_type()))
-    }
-}
 impl PartialEq<Self> for DictObject {
     fn eq(&self, other: &Self) -> bool {
         // FIXME: should we compare every entry?
@@ -72,7 +65,7 @@ impl fmt::Display for DictObject {
             if i != 0 {
                 write!(f, ", ").unwrap();
             }
-            write!(f, "{}: {}", entry.key, entry.value).unwrap();
+            write!(f, "{}: {}", entry.key.borrow(), entry.value.borrow()).unwrap();
         }
         write!(f, "}}")
     }

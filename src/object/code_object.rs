@@ -2,14 +2,13 @@ use crate::object::{BasePycObject, StringObject, TupleObject};
 use crate::object::PyObjectTrait as PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 use crate::{InputStream, PycParser};
-use crate::utils::ByteCode;
+use crate::utils::{ByteCode, DowncastTrait};
 use crate::utils::Magic::{self, *};
 
 use crate::utils::PyObject;
 type PyObjectOption = Option<PyObject>;
+#[derive(Default)]
 #[allow(unused)]
 pub struct CodeObject {
     base: BasePycObject,
@@ -37,7 +36,7 @@ pub struct CodeObject {
 
 impl CodeObject {
     #[allow(unused_assignments)]
-    pub fn new(stream: &mut InputStream, magic: Magic) -> Rc<Self> {
+    pub fn new(stream: &mut InputStream, magic: Magic) -> PyObject {
         let mut num_args = None;
         let mut num_pos_only_args = None;
         let mut num_kw_only_args = None;
@@ -83,7 +82,7 @@ impl CodeObject {
         } else if magic >= MAGIC2_3 {
             flags = Some(stream.read_u32().unwrap());
         }
-        code = Some(PycParser::marshal_object(stream, magic).downcast_rc::<StringObject>().unwrap().data().clone());
+        code = Some(PycParser::marshal_object(stream, magic).downcast_refcell::<StringObject>().unwrap().data().clone());
         constants = Some(PycParser::marshal_object(stream, magic));
         names = Some(PycParser::marshal_object(stream, magic));
 
@@ -142,7 +141,7 @@ impl CodeObject {
             exception_table
         };
         // code.strip_cache();
-        Rc::new(code)
+        BasePycObject::new_py_object(code)
     }
 
     pub fn dump_code(&self) -> String {
@@ -184,12 +183,14 @@ impl CodeObject {
 
     pub fn consts(&self) -> Vec<PyObject> {
         // constants should be tuple
-        let tuple = self.constants.clone().unwrap().downcast_rc::<TupleObject>().unwrap();
+        let constants = self.constants.clone().unwrap();
+        let tuple = constants.downcast_refcell::<TupleObject>().unwrap();
         tuple.values().clone()
     }
     pub fn names(&self) -> Vec<PyObject> {
         // constants should be tuple
-        let tuple = self.names.clone().unwrap().downcast_rc::<TupleObject>().unwrap();
+        let names = self.names.clone().unwrap();
+        let tuple = names.downcast_refcell::<TupleObject>().unwrap();
         tuple.values().clone()
     }
     pub fn code(&self) -> Vec<u8> {
@@ -220,11 +221,6 @@ impl CodeObject {
     }
 }
 
-impl Hash for CodeObject {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        panic!("{}", format!("cannot hash {:?}", self.object_type()))
-    }
-}
 impl PartialEq<Self> for CodeObject {
     fn eq(&self, other: &Self) -> bool {
         self == other
@@ -260,3 +256,4 @@ impl fmt::Display for CodeObject {
         write!(f, "")
     }
 }
+
