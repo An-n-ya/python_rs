@@ -1,4 +1,4 @@
-use crate::object::BasePycObject;
+use crate::object::{BasePycObject, IterObject};
 use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
@@ -71,10 +71,17 @@ impl PyObjectTrait for TupleObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
+    fn base_object(&self) -> &BasePycObject {
+        &self.base
+    }
 
     fn hash_key(&self) -> String {
         // TODO: tuple should be hashable
         unimplemented!()
+    }
+
+    fn to_iter(&self) -> PyObject {
+        IterObject::new(self.values.clone())
     }
 }
 

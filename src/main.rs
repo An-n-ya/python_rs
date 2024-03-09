@@ -100,7 +100,20 @@ impl InputStream {
     }
 
     pub fn push_ref(&mut self, r: PyObject) {
+        #[cfg(feature = "debug_marshal")]
+        println!("[DEBUG] push ref {}:{r:?}", self.refs.len());
         self.refs.push(r);
+    }
+
+    pub fn reserve_ref(&mut self) ->usize {
+        let res = self.refs.len();
+        self.refs.push(NullObject::new());
+        res
+    }
+
+    pub fn set_ref(&mut self, index: usize, object: PyObject) {
+        assert!(index < self.refs.len());
+        self.refs[index] = object;
     }
 
     pub fn get_ref(&self, index: usize) -> PyObject {
@@ -240,7 +253,8 @@ impl PycParser {
              | ObjectType::ASCII
              | ObjectType::ASCII_INTERNED => {
                 let ret = StringObject::new(stream);
-                stream.push_ref(ret.clone());
+                // FIXME: why we cannot add ref to STRING, but SHORT_ASCII is ok?
+                // stream.push_ref(ret.clone());
                 ret
             },
             ObjectType::SHORT_ASCII
@@ -265,13 +279,19 @@ impl PycParser {
                 ret
             },
             ObjectType::TUPLE => {
+                let index = stream.reserve_ref();
+                #[cfg(feature = "debug_marshal")]
+                println!("[DEBUG] reserved index: {index}");
                 let ret = TupleObject::new(stream, magic);
-                stream.push_ref(ret.clone());
+                stream.set_ref(index, ret.clone());
                 ret
             },
             ObjectType::SMALL_TUPLE => {
+                let index = stream.reserve_ref();
+                #[cfg(feature = "debug_marshal")]
+                println!("[DEBUG] reserved index: {index}");
                 let ret = TupleObject::new_from_short(stream, magic);
-                stream.push_ref(ret.clone());
+                stream.set_ref(index, ret.clone());
                 ret
             },
             ObjectType::SET => {
@@ -281,6 +301,8 @@ impl PycParser {
             },
             ObjectType::REF => {
                 let index = stream.read_u32().unwrap(); // index
+                #[cfg(feature = "debug_marshal")]
+                println!("[DEBUG] index: {index}");
                 stream.get_ref(index as usize)
             },
             ObjectType::CODE => CodeObject::new(stream, magic),

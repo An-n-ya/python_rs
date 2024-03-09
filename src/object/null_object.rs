@@ -27,6 +27,13 @@ impl PyObjectTrait for NullObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
+    fn base_object(&self) -> &BasePycObject {
+        &self.base
+    }
+
+    fn is_null(&self) -> bool {
+        true
+    }
 }
 
 impl fmt::Display for NullObject {

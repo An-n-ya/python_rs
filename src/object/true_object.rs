@@ -28,6 +28,9 @@ impl PyObjectTrait for TrueObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
+    fn base_object(&self) -> &BasePycObject {
+        &self.base
+    }
 }
 
 impl fmt::Display for TrueObject {

@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use crate::frame::Frame as FrameRaw;
-use crate::object::{CallableObject, CodeObject, FalseObject, IntObject, NoneObject, NullObject, TrueObject};
+use crate::object::{CallableObject, CodeObject, FalseObject, IntObject, ListObject, NoneObject, NullObject, TrueObject};
 use crate::utils::ByteCode::*;
 use crate::utils::{BinaryOp, ByteCode, CmpOP, DowncastTrait, PyObject};
 
@@ -91,8 +91,47 @@ impl Interpreter {
                         let callable = CallableObject::new(code, defaults);
                         cur_frame.push(callable);
                     },
+                    GET_ITER => {
+                        let obj = cur_frame.pop();
+                        cur_frame.push(obj.borrow().to_iter());
+                    },
+                    FOR_ITER => {
+                        let mut fn_arg = vec![];
+                        let iter_obj = cur_frame.top();
+                        fn_arg.push(iter_obj.clone());
+                        let callable_fn = iter_obj.borrow().get_attr("next".to_string());
+                        let callable = callable_fn.downcast_refcell::<CallableObject>().expect("invalid callable next function");
+                        assert!(callable.is_native());
+                        let return_value = callable.call_native(fn_arg);
+                        cur_frame.push(return_value);
+
+                        if cur_frame.top().borrow().is_null() {
+                            let arg = arg.unwrap();
+                            cur_frame.jump_offset(Self::get_jump_offset(bytecode, arg));
+                            cur_frame.pop();
+                        }
+                    },
+                    BUILD_LIST => {
+                        let arg = arg.unwrap();
+                        let mut values = vec![];
+                        for _ in 0..arg {
+                            values.push(cur_frame.pop());
+                        }
+                        let list = ListObject::new_from_values(values);
+                        cur_frame.push(list);
+                    },
+                    LIST_EXTEND => {
+                        let arg = arg.unwrap();
+                        let tos = cur_frame.pop();
+                        if arg == 1 {
+                            let base = cur_frame.pop();
+                            cur_frame.push(ListObject::extend(base, tos));
+                        } else {
+                            unimplemented!()
+                        }
+                    },
                     PUSH_NULL => {
-                        cur_frame.push(NullObject::new())   ;
+                        cur_frame.push(NullObject::new());
                     },
                     RETURN_VALUE => {
                         self.return_value = Some(cur_frame.pop());

@@ -1,4 +1,4 @@
-use crate::object::BasePycObject;
+use crate::object::{BasePycObject, IterObject};
 use crate::object::PyObjectTrait;
 use crate::object::ObjectType;
 use std::fmt;
@@ -26,7 +26,6 @@ impl StringObject {
         BasePycObject::new_py_object(Self::_new(stream, length))
     }
 
-    #[allow(dead_code)]
     pub fn new_from_str(s: &str) -> PyObject {
         BasePycObject::new_py_object(Self {
             base: BasePycObject::new_from_char('s'),
@@ -46,7 +45,8 @@ impl StringObject {
     }
 
     pub fn string(&self) -> String {
-        String::from_utf8(self.data.clone()).expect("invalid utf8 string")
+        // String::from_utf8(self.data.clone()).expect("invalid utf8 string")
+        String::from_utf8(self.data.clone()).unwrap_or("".to_string())
     }
 
     pub fn data(&self) -> &Vec<u8> {
@@ -71,10 +71,21 @@ impl PyObjectTrait for StringObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
+    fn base_object(&self) -> &BasePycObject {
+        &self.base
+    }
     fn hash_key(&self) -> String {
         let mut res = "$String_".to_string();
         res.push_str(&self.string());
         res
+    }
+    fn to_iter(&self) -> PyObject {
+        let s = self.string();
+        let mut values = vec![];
+        for c in s.chars() {
+            values.push(StringObject::new_from_str(&c.to_string()));
+        }
+        IterObject::new(values)
     }
 }
 

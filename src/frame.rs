@@ -102,6 +102,9 @@ impl Frame {
         self.stack.pop().take().unwrap()
     }
 
+    pub fn top(&mut self) -> PyObject{
+        self.stack.last().unwrap().clone()
+    }
     pub fn push(&mut self, obj: PyObject) {
         self.stack.push(obj)
     }

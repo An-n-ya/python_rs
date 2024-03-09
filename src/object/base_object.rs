@@ -1,8 +1,10 @@
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::rc::Rc;
 use downcast_rs::{Downcast, impl_downcast};
 use dyn_eq::DynEq;
+use crate::utils::PyObject;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 #[allow(unused, non_camel_case_types)]
@@ -39,7 +41,8 @@ pub enum ObjectType{
     SHORT_ASCII_INTERNED ,
 
     // runtime object
-    CALLABLE
+    CALLABLE,
+    ITER
 }
 impl Default for ObjectType {
     fn default() -> Self {
@@ -91,27 +94,50 @@ impl From<char> for ObjectType {
 
 pub trait PyObjectTrait: Debug + Display + Downcast + DynEq {
     fn object_type(&self) -> ObjectType;
+    fn base_object(&self) -> &BasePycObject;
     fn hash_key(&self) -> String {
         panic!("{}", format!("cannot hash {:?}", self.object_type()))
+    }
+
+    fn to_iter(&self) -> PyObject {
+        panic!("{}", format!("cannot convert {:?} to iter object", self.object_type()))
+    }
+
+    fn get_attr(&self, name: String) -> PyObject {
+        if let Some(attr) = self.base_object().method.get(&("$String_".to_string() + &name)) {
+            return attr.clone()
+        }
+        panic!("{}", format!("object {:?} doesn't have attribute {}", self.object_type(), name))
+    }
+
+    fn is_null(&self) -> bool {
+        false
     }
 }
 impl_downcast!(PyObjectTrait);
 dyn_eq::eq_trait_object!(PyObjectTrait);
 
 #[derive(Default)]
-pub(crate) struct BasePycObject {
-    _type: ObjectType
+pub struct BasePycObject {
+    _type: ObjectType,
+    method: HashMap<String, PyObject>
 }
 
 impl BasePycObject {
     pub fn new(_type: ObjectType) -> Self {
         Self {
-            _type
+            _type,
+            method: HashMap::new()
         }
     }
+
     pub fn new_from_char(c: char) -> Self {
         let _type: ObjectType = c.into();
         Self::new(_type)
+    }
+
+    pub fn insert_method(&mut self, key: &str, callable: PyObject) {
+        self.method.insert("$String_".to_string() + key, callable);
     }
 
     pub fn new_py_object<T>(obj: T) -> Rc<RefCell<T>> {
@@ -121,6 +147,5 @@ impl BasePycObject {
     pub fn object_type(&self) -> ObjectType {
         self._type
     }
-
 
 }

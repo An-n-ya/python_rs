@@ -14,7 +14,7 @@ use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Deref;
 
-use crate::object::{CallableObject, CodeObject, DictObject, FalseObject, IntLongObject, IntObject, ListObject, NoneObject, NullObject, PyObjectTrait as PyObjectTrait, SetObject, StringObject, TrueObject, TupleObject};
+use crate::object::{CallableObject, CodeObject, DictObject, FalseObject, IntLongObject, IntObject, IterObject, ListObject, NoneObject, NullObject, PyObjectTrait as PyObjectTrait, SetObject, StringObject, TrueObject, TupleObject};
 pub type PyObject = Rc<RefCell<dyn PyObjectTrait>>;
 
 pub trait DowncastTrait {
@@ -52,6 +52,7 @@ fn is_downcastable(type_id: TypeId) -> bool {
         || type_id == TypeId::of::<StringObject>()
         || type_id == TypeId::of::<TrueObject>()
         || type_id == TypeId::of::<TupleObject>()
+        || type_id == TypeId::of::<IterObject>()
 
 }
 

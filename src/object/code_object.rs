@@ -233,6 +233,9 @@ impl PyObjectTrait for CodeObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
+    fn base_object(&self) -> &BasePycObject {
+        &self.base
+    }
 }
 
 impl fmt::Debug for CodeObject {
@@ -248,6 +251,7 @@ impl fmt::Debug for CodeObject {
         writeln!(f, "   local_names={:?}", self.local_names).unwrap();
         writeln!(f, "   file_name={:?}", self.file_name).unwrap();
         writeln!(f, "   name={:?}", self.name).unwrap();
+        writeln!(f, "   consts={:?}", self.consts()).unwrap();
         writeln!(f, ")")
     }
 }

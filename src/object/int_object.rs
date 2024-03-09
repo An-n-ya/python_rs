@@ -52,6 +52,9 @@ impl PyObjectTrait for IntObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
+    fn base_object(&self) -> &BasePycObject {
+        &self.base
+    }
 
     fn hash_key(&self) -> String {
         let mut res = "$Int_".to_string();

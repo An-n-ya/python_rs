@@ -30,6 +30,9 @@ impl PyObjectTrait for IntLongObject {
     fn object_type(&self) -> ObjectType {
         self.base.object_type()
     }
+    fn base_object(&self) -> &BasePycObject {
+        &self.base
+    }
 
     fn hash_key(&self) -> String {
         let mut res = "$IntLong_".to_string();
